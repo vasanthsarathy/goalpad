@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: flex; flex-direction: column; height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden; touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  background: #1e232b; color: #f2f4f7;
+}
+#topbar, #toolbar, #stepsbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: #2a303a; flex: 0 0 auto;
+}
+#topbar { justify-content: space-between; }
+.brand { font-weight: 700; font-size: 18px; }
+.top-actions { display: flex; gap: 8px; }
+#stage { flex: 1 1 auto; min-height: 0; display: flex; }
+#board { width: 100%; height: 100%; display: block; background: #2f7a3f; }
+#toolbar { justify-content: center; flex-wrap: wrap; }
+#stepsbar { gap: 10px; }
+#scrub { flex: 1 1 auto; }
+button, .tool {
+  font-size: 16px; padding: 10px 14px; min-height: 44px;
+  border: none; border-radius: 8px; background: #3b4250; color: #f2f4f7;
+}
+.tool[aria-pressed="true"] { background: #2f6fed; }
+button:active { filter: brightness(1.2); }
+#step-label { min-width: 96px; text-align: center; font-variant-numeric: tabular-nums; }

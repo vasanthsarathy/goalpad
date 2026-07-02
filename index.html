@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>goalpad</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="topbar">
+    <span class="brand">▦ goalpad</span>
+    <div class="top-actions">
+      <button id="btn-setup" type="button">Setup</button>
+      <button id="btn-saveload" type="button">Save / Load</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <svg id="board" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <g id="layer-field"></g>
+      <g id="layer-annotations"></g>
+      <g id="layer-tokens"></g>
+    </svg>
+  </main>
+
+  <nav id="toolbar">
+    <button class="tool" data-tool="select" aria-pressed="true">👆 Select</button>
+    <button class="tool" data-tool="arrow">↗ Arrow</button>
+    <button class="tool" data-tool="pen">✎ Pen</button>
+    <button class="tool" data-tool="cone">▲ Cone</button>
+    <button class="tool" data-tool="text">T Text</button>
+    <button class="tool" data-tool="delete">🗑 Delete</button>
+  </nav>
+
+  <footer id="stepsbar">
+    <button id="btn-step-prev" type="button">◀</button>
+    <input id="scrub" type="range" min="0" max="0" step="0.01" value="0">
+    <button id="btn-step-next" type="button">▶</button>
+    <span id="step-label">Step 0 / 0</span>
+    <button id="btn-add-step" type="button">+ Add step</button>
+    <button id="btn-play" type="button">▶ Play</button>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
