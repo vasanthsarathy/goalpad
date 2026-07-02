@@ -74,7 +74,7 @@ The entire board state is one **scene** object — the unit that is saved, loade
 ```
 scene = {
   name: "Overlap on the right",
-  field: { size: "9v9", half: false },      // or small-sided counts
+  field: { preset: "9v9" | "7v7" | "11v11" | "custom", teamA: 9, teamB: 9, half: false },
   players: [ { id, team: "A" | "B", number, x, y }, ... ],
   ball:    { x, y },
   annotations: [ { type: "arrow" | "pen" | "cone" | "text", ... }, ... ],
@@ -82,6 +82,8 @@ scene = {
 }
 ```
 
+- `field.preset` of `7v7`/`9v9`/`11v11` sets `teamA`/`teamB` to matching counts; `custom`
+  lets `teamA` and `teamB` differ independently (e.g. `2` vs `1` for a 2v1).
 - A **step** stores each player's `x/y` and the ball's `x/y` (a position snapshot).
 - **Play** interpolates every token from step N to step N+1 over a fixed duration,
   in sequence. A slider scrubs between steps.
