@@ -41,6 +41,28 @@
     <button id="btn-play" type="button">▶ Play</button>
   </footer>
 
+  <div id="panel-setup" class="panel" hidden>
+    <div class="panel-card">
+      <h2>Setup</h2>
+      <label>Field / game size
+        <select id="setup-preset">
+          <option value="11v11">11 v 11</option>
+          <option value="9v9">9 v 9</option>
+          <option value="7v7">7 v 7</option>
+          <option value="custom">Custom (small-sided grid)</option>
+        </select>
+      </label>
+      <label>Team A players <input id="setup-teamA" type="number" min="1" max="11" value="11"></label>
+      <label>Team B players <input id="setup-teamB" type="number" min="1" max="11" value="11"></label>
+      <label><input id="setup-half" type="checkbox"> Half pitch</label>
+      <p class="panel-note">Changing the setup rebuilds the board with default positions.</p>
+      <div class="panel-actions">
+        <button id="setup-cancel" type="button">Cancel</button>
+        <button id="setup-apply" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

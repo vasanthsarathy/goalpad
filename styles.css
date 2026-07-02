@@ -26,3 +26,21 @@ button, .tool {
 .tool[aria-pressed="true"] { background: #2f6fed; }
 button:active { filter: brightness(1.2); }
 #step-label { min-width: 96px; text-align: center; font-variant-numeric: tabular-nums; }
+.panel {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.5); z-index: 10;
+}
+.panel[hidden] { display: none; }
+.panel-card {
+  background: #2a303a; padding: 20px; border-radius: 12px;
+  width: min(92vw, 380px); display: flex; flex-direction: column; gap: 12px;
+}
+.panel-card h2 { margin: 0 0 4px; }
+.panel-card label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.panel-card select, .panel-card input[type="number"] {
+  font-size: 16px; padding: 8px; border-radius: 6px; border: none; min-width: 120px;
+}
+.panel-note { font-size: 13px; opacity: 0.7; margin: 0; }
+.panel-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.saved-list { list-style: none; padding: 0; margin: 0; max-height: 40vh; overflow: auto; }
+.saved-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; }
