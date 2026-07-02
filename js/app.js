@@ -1,9 +1,15 @@
 // app.js — entry point. Owns the current scene and wires modules together.
-// Task 1: just size the board's viewBox so the empty pitch fills the stage.
+import { createScene } from './scene.js';
+import { renderField } from './field.js';
 
 const board = document.getElementById('board');
+const layerField = document.getElementById('layer-field');
 
-// Temporary viewBox until the field module sets it (full pitch, landscape).
-board.setAttribute('viewBox', '0 0 1050 680');
+const scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: false });
 
+function render() {
+  renderField(board, layerField, scene.field);
+}
+
+render();
 console.log('[goalpad] loaded');
