@@ -1,7 +1,10 @@
-// field.js — DOM: pitch markings for full / left / right into a <g> layer.
+// field.js — DOM: striped turf + pitch markings for full / left / right into a <g> layer.
 import { fieldViewBox } from './scene.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+const STRIPE_W = 105;               // viewBox units per mowing stripe
+const TURF_A = '#2f5f45';
+const TURF_B = '#2b5940';
 
 function el(name, attrs) {
   const node = document.createElementNS(SVGNS, name);
@@ -14,19 +17,29 @@ export function renderField(svg, layerEl, field) {
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   layerEl.replaceChildren();
 
-  const g = el('g', { stroke: 'rgba(255,255,255,0.85)', 'stroke-width': '2', fill: 'none' });
+  // Striped turf (vertical mowing bands), drawn first.
+  const turf = el('g', {});
+  const n = Math.ceil(w / STRIPE_W);
+  for (let i = 0; i < n; i++) {
+    const x = i * STRIPE_W;
+    const sw = Math.min(STRIPE_W, w - x);
+    turf.appendChild(el('rect', { x, y: 0, width: sw, height: h, fill: i % 2 ? TURF_B : TURF_A }));
+  }
+  layerEl.appendChild(turf);
+
+  // Thin, crisp markings.
+  const g = el('g', { stroke: 'rgba(255,255,255,0.9)', 'stroke-width': '1.4', fill: 'none' });
   g.appendChild(el('rect', { x: 6, y: 6, width: w - 12, height: h - 12 }));
 
   const centreR = Math.min(w, h) * 0.09;
-  const dot = (cx, cy) => el('circle', { cx, cy, r: 3, fill: 'rgba(255,255,255,0.85)', stroke: 'none' });
+  const dot = (cx, cy) => el('circle', { cx, cy, r: 3, fill: 'rgba(255,255,255,0.9)', stroke: 'none' });
 
-  // Penalty/goal box helper for a given side ('left' | 'right').
   const boxDepth = Math.min(w * 0.16, 165);
   const penH = Math.min(h * 0.6, 403);
   const goalH = Math.min(h * 0.3, 183);
   const goalDepth = Math.min(w * 0.05, 55);
   const drawGoal = (side) => {
-    if (w <= 130) return; // too small to bother
+    if (w <= 130) return;
     if (side === 'left') {
       g.appendChild(el('rect', { x: 6, y: (h - penH) / 2, width: boxDepth, height: penH }));
       g.appendChild(el('rect', { x: 6, y: (h - goalH) / 2, width: goalDepth, height: goalH }));
@@ -43,12 +56,11 @@ export function renderField(svg, layerEl, field) {
     drawGoal('left');
     drawGoal('right');
   } else if (field.half === 'left') {
-    // Left half: left goal; halfway line at the right edge; centre circle half-visible there.
     g.appendChild(el('line', { x1: w - 6, y1: 6, x2: w - 6, y2: h - 6 }));
     g.appendChild(el('circle', { cx: w - 6, cy: h / 2, r: centreR }));
     g.appendChild(dot(w - 6, h / 2));
     drawGoal('left');
-  } else { // 'right'
+  } else {
     g.appendChild(el('line', { x1: 6, y1: 6, x2: 6, y2: h - 6 }));
     g.appendChild(el('circle', { cx: 6, cy: h / 2, r: centreR }));
     g.appendChild(dot(6, h / 2));

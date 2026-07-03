@@ -15,7 +15,7 @@ body {
 .brand { font-weight: 700; font-size: 18px; }
 .top-actions { display: flex; gap: 8px; }
 #stage { flex: 1 1 auto; min-height: 0; display: flex; }
-#board { width: 100%; height: 100%; display: block; background: #2f7a3f; }
+#board { width: 100%; height: 100%; display: block; background: #0f1216; }
 #toolbar { justify-content: center; flex-wrap: wrap; }
 #stepsbar { gap: 10px; }
 #scrub { flex: 1 1 auto; }
