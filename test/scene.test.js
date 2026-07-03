@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene } from '../js/scene.js';
+import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene, pieceById, addPlayer, addCone, removePiece, duplicateFrame, deleteFrame } from '../js/scene.js';
 
 test('fieldViewBox full uses preset dims in tenths of a metre', () => {
   assert.deepEqual(fieldViewBox({ preset: '11v11', half: 'full' }), { w: 1050, h: 680 });
@@ -62,4 +62,56 @@ test('player ids and numbers are sequential per team', () => {
   const scene = createScene({ preset: 'custom', teamA: 3, teamB: 2, half: 'full' });
   assert.deepEqual(scene.pieces.filter(p => p.team === 'A').map(p => p.id), ['A1', 'A2', 'A3']);
   assert.deepEqual(scene.pieces.filter(p => p.team === 'B').map(p => p.id), ['B1', 'B2']);
+});
+
+test('addPlayer uses the next free number and adds a position in every frame', () => {
+  const scene = createScene({ preset: 'custom', teamA: 2, teamB: 0, half: 'full' });
+  duplicateFrame(scene, 0); // now 2 frames
+  const id = addPlayer(scene, 'A', 100, 120);
+  assert.equal(id, 'A3');
+  assert.ok(scene.pieces.some(p => p.id === 'A3' && p.team === 'A' && p.number === 3));
+  assert.deepEqual(scene.frames[0].positions['A3'], { x: 100, y: 120 });
+  assert.deepEqual(scene.frames[1].positions['A3'], { x: 100, y: 120 });
+});
+
+test('addPlayer fills a gap left by a deletion', () => {
+  const scene = createScene({ preset: 'custom', teamA: 3, teamB: 0, half: 'full' });
+  removePiece(scene, 'A2');
+  assert.equal(addPlayer(scene, 'A', 10, 10), 'A2');
+});
+
+test('addCone gives sequential cone ids and positions in all frames', () => {
+  const scene = createScene({ preset: 'custom', teamA: 0, teamB: 0, half: 'full' });
+  const c1 = addCone(scene, 5, 6);
+  const c2 = addCone(scene, 7, 8);
+  assert.equal(c1, 'cone-1');
+  assert.equal(c2, 'cone-2');
+  assert.deepEqual(scene.frames[0].positions['cone-1'], { x: 5, y: 6 });
+});
+
+test('removePiece deletes the piece and clears it from every frame', () => {
+  const scene = createScene({ preset: 'custom', teamA: 2, teamB: 0, half: 'full' });
+  duplicateFrame(scene, 0);
+  removePiece(scene, 'A1');
+  assert.equal(pieceById(scene, 'A1'), null);
+  assert.equal(scene.frames[0].positions['A1'], undefined);
+  assert.equal(scene.frames[1].positions['A1'], undefined);
+});
+
+test('duplicateFrame deep-copies positions and starts with empty markup', () => {
+  const scene = createScene({ preset: 'custom', teamA: 1, teamB: 0, half: 'full' });
+  scene.frames[0].markup.push({ type: 'text', x: 1, y: 2, text: 'hi' });
+  const idx = duplicateFrame(scene, 0);
+  assert.equal(idx, 1);
+  assert.deepEqual(scene.frames[1].markup, []);
+  scene.frames[0].positions['A1'].x = 999;
+  assert.notEqual(scene.frames[1].positions['A1'].x, 999); // deep copy
+});
+
+test('deleteFrame removes a frame but never the last one', () => {
+  const scene = createScene({ preset: 'custom', teamA: 1, teamB: 0, half: 'full' });
+  assert.equal(deleteFrame(scene, 0), false); // only one frame
+  duplicateFrame(scene, 0);
+  assert.equal(deleteFrame(scene, 1), true);
+  assert.equal(scene.frames.length, 1);
 });

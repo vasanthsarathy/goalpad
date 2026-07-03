@@ -67,3 +67,54 @@ export function createScene(opts) {
     frames: [{ positions, markup: [] }],
   };
 }
+
+export function pieceById(scene, id) {
+  return scene.pieces.find(p => p.id === id) || null;
+}
+
+function nextNumber(scene, team) {
+  const used = new Set(
+    scene.pieces.filter(p => p.kind === 'player' && p.team === team).map(p => p.number)
+  );
+  let n = 1;
+  while (used.has(n)) n++;
+  return n;
+}
+
+export function addPlayer(scene, team, x, y) {
+  const number = nextNumber(scene, team);
+  const id = `${team}${number}`;
+  scene.pieces.push({ id, kind: 'player', team, number });
+  for (const f of scene.frames) f.positions[id] = { x: Math.round(x), y: Math.round(y) };
+  return id;
+}
+
+export function addCone(scene, x, y) {
+  const nums = scene.pieces
+    .filter(p => p.kind === 'cone')
+    .map(p => Number(p.id.split('-')[1]) || 0);
+  const n = (nums.length ? Math.max(...nums) : 0) + 1;
+  const id = `cone-${n}`;
+  scene.pieces.push({ id, kind: 'cone' });
+  for (const f of scene.frames) f.positions[id] = { x: Math.round(x), y: Math.round(y) };
+  return id;
+}
+
+export function removePiece(scene, id) {
+  scene.pieces = scene.pieces.filter(p => p.id !== id);
+  for (const f of scene.frames) delete f.positions[id];
+}
+
+export function duplicateFrame(scene, index) {
+  const src = scene.frames[index];
+  const positions = {};
+  for (const [id, p] of Object.entries(src.positions)) positions[id] = { x: p.x, y: p.y };
+  scene.frames.splice(index + 1, 0, { positions, markup: [] });
+  return index + 1;
+}
+
+export function deleteFrame(scene, index) {
+  if (scene.frames.length <= 1) return false;
+  scene.frames.splice(index, 1);
+  return true;
+}
