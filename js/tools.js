@@ -59,7 +59,7 @@ export function renderAnnotations(layerEl, scene) {
   scene.annotations.forEach((a, i) => drawAnnotation(layerEl, a, i));
 }
 
-export function initTools(svg, layerEl, scene, getTool, onChange) {
+export function initTools(svg, layerEl, getScene, getTool, onChange) {
   let draft = null; // in-progress annotation
 
   svg.addEventListener('pointerdown', (e) => {
@@ -73,14 +73,14 @@ export function initTools(svg, layerEl, scene, getTool, onChange) {
     } else if (tool === 'pen') {
       draft = { type: 'pen', points: [{ x: Math.round(x), y: Math.round(y) }] };
     } else if (tool === 'cone') {
-      scene.annotations.push({ type: 'cone', x: Math.round(x), y: Math.round(y) });
+      getScene().annotations.push({ type: 'cone', x: Math.round(x), y: Math.round(y) });
       onChange();
     } else if (tool === 'text') {
       const text = window.prompt('Label text:');
-      if (text) { scene.annotations.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onChange(); }
+      if (text) { getScene().annotations.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onChange(); }
     } else if (tool === 'delete') {
       const idx = e.target.dataset && e.target.dataset.annIndex;
-      if (idx != null) { scene.annotations.splice(Number(idx), 1); onChange(); }
+      if (idx != null) { getScene().annotations.splice(Number(idx), 1); onChange(); }
     }
   });
 
@@ -90,7 +90,7 @@ export function initTools(svg, layerEl, scene, getTool, onChange) {
     if (draft.type === 'arrow') { draft.x2 = x; draft.y2 = y; }
     else if (draft.type === 'pen') { draft.points.push({ x: Math.round(x), y: Math.round(y) }); }
     // Live preview: temporarily append, then let onChange re-render on release.
-    renderAnnotations(layerEl, { annotations: [...scene.annotations, draft] });
+    renderAnnotations(layerEl, { annotations: [...getScene().annotations, draft] });
   });
 
   const finish = (e) => {
@@ -98,9 +98,9 @@ export function initTools(svg, layerEl, scene, getTool, onChange) {
     try { svg.releasePointerCapture(e.pointerId); } catch {}
     if (draft.type === 'arrow') {
       const moved = Math.hypot(draft.x2 - draft.x1, draft.y2 - draft.y1) > 5;
-      if (moved) scene.annotations.push({ ...draft, x1: Math.round(draft.x1), y1: Math.round(draft.y1), x2: Math.round(draft.x2), y2: Math.round(draft.y2) });
+      if (moved) getScene().annotations.push({ ...draft, x1: Math.round(draft.x1), y1: Math.round(draft.y1), x2: Math.round(draft.x2), y2: Math.round(draft.y2) });
     } else if (draft.type === 'pen' && draft.points.length > 1) {
-      scene.annotations.push(draft);
+      getScene().annotations.push(draft);
     }
     draft = null;
     onChange();

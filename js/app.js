@@ -28,7 +28,7 @@ document.querySelectorAll('.tool').forEach((btn) => {
   });
 });
 
-initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
+initTools(board, layerAnnotations, () => scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
 
 // ---- Setup panel ----
 const panelSetup = document.getElementById('panel-setup');
@@ -68,7 +68,6 @@ document.getElementById('setup-apply').addEventListener('click', () => {
   scene = createScene(field, scene.name);
   closeSetup();
   render();
-  initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
 });
 
 render();
