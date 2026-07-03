@@ -44,3 +44,6 @@ button:active { filter: brightness(1.2); }
 .panel-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .saved-list { list-style: none; padding: 0; margin: 0; max-height: 40vh; overflow: auto; }
 .saved-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; }
+.import-label { display: inline-flex; align-items: center; padding: 10px 14px; min-height: 44px; background: #3b4250; border-radius: 8px; cursor: pointer; }
+.saved-list button { padding: 6px 10px; min-height: 36px; }
+h3 { margin: 8px 0 0; }

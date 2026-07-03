@@ -63,6 +63,25 @@
     </div>
   </div>
 
+  <div id="panel-saveload" class="panel" hidden>
+    <div class="panel-card">
+      <h2>Save / Load</h2>
+      <label>Name <input id="save-name" type="text" placeholder="e.g. Overlap right"></label>
+      <div class="panel-actions">
+        <button id="save-current" type="button">Save</button>
+        <button id="export-current" type="button">Export file</button>
+        <label class="import-label">Import file
+          <input id="import-file" type="file" accept="application/json" hidden>
+        </label>
+      </div>
+      <h3>Saved plays</h3>
+      <ul id="saved-list" class="saved-list"></ul>
+      <div class="panel-actions">
+        <button id="saveload-close" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

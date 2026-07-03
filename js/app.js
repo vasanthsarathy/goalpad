@@ -4,6 +4,7 @@ import { renderField } from './field.js';
 import { renderTokens } from './tokens.js';
 import { renderAnnotations, initTools } from './tools.js';
 import { createStepController } from './steps.js';
+import { saveNamed, listSaved, loadNamed, deleteNamed, exportScene, importSceneFile } from './storage.js';
 
 const board = document.getElementById('board');
 const layerField = document.getElementById('layer-field');
@@ -118,6 +119,63 @@ document.getElementById('btn-step-prev').addEventListener('click', () => {
 document.getElementById('btn-step-next').addEventListener('click', () => {
   const v = Math.min(Number(scrub.max), Math.round(Number(scrub.value)) + 1);
   scrub.value = String(v); steps.scrubTo(v);
+});
+
+function loadScene(next) {
+  scene = next;
+  render();
+  buildSteps();
+}
+
+// ---- Save/Load panel ----
+const panelSaveLoad = document.getElementById('panel-saveload');
+const savedList = document.getElementById('saved-list');
+const saveName = document.getElementById('save-name');
+
+function refreshSavedList() {
+  savedList.replaceChildren();
+  for (const name of listSaved()) {
+    const li = document.createElement('li');
+    const label = document.createElement('span');
+    label.textContent = name;
+    const loadBtn = document.createElement('button');
+    loadBtn.textContent = 'Load';
+    loadBtn.addEventListener('click', () => {
+      const s = loadNamed(name);
+      if (s) { loadScene(s); panelSaveLoad.hidden = true; }
+    });
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => { deleteNamed(name); refreshSavedList(); });
+    const actions = document.createElement('span');
+    actions.append(loadBtn, delBtn);
+    li.append(label, actions);
+    savedList.appendChild(li);
+  }
+}
+
+document.getElementById('btn-saveload').addEventListener('click', () => {
+  saveName.value = scene.name === 'Untitled' ? '' : scene.name;
+  refreshSavedList();
+  panelSaveLoad.hidden = false;
+});
+document.getElementById('saveload-close').addEventListener('click', () => { panelSaveLoad.hidden = true; });
+document.getElementById('save-current').addEventListener('click', () => {
+  const name = (saveName.value || 'Untitled').trim();
+  scene.name = name;
+  saveNamed(name, scene);
+  refreshSavedList();
+});
+document.getElementById('export-current').addEventListener('click', () => {
+  scene.name = (saveName.value || scene.name || 'scene').trim();
+  exportScene(scene);
+});
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  importSceneFile(file).then((s) => { loadScene(s); panelSaveLoad.hidden = true; })
+    .catch(() => window.alert('Could not read that file.'));
+  e.target.value = '';
 });
 
 buildSteps();
