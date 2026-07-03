@@ -1,136 +1,144 @@
-// app.js — entry point. Owns the current scene and wires modules together.
-import { createScene, applyStep } from './scene.js';
+// app.js — entry point. Owns the scene and the current frame index; wires all modules.
+import { createScene, duplicateFrame, deleteFrame } from './scene.js';
 import { renderField } from './field.js';
-import { renderTokens } from './tokens.js';
-import { renderAnnotations, initTools } from './tools.js';
-import { createStepController } from './steps.js';
+import { renderTokens, setTokenPositions } from './tokens.js';
+import { renderMarkup, initTools } from './tools.js';
+import { createStepController, activeMarkupIndex } from './steps.js';
 import { saveNamed, listSaved, loadNamed, deleteNamed, exportScene, importSceneFile } from './storage.js';
 
 const board = document.getElementById('board');
 const layerField = document.getElementById('layer-field');
-const layerTokens = document.getElementById('layer-tokens');
 const layerAnnotations = document.getElementById('layer-annotations');
-const scrub = document.getElementById('scrub');
-const stepLabel = document.getElementById('step-label');
+const layerTokens = document.getElementById('layer-tokens');
+
+let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' });
+let index = 0;               // current frame index
 let currentTool = 'select';
+let currentTeam = 'A';
 
-let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: false });
+const frame = () => scene.frames[index];
 
+// Full render of the current frame (field + tokens + its markup).
 function render() {
   renderField(board, layerField, scene.field);
-  renderAnnotations(layerAnnotations, scene);
-  renderTokens(board, layerTokens, scene, () => {});
+  renderTokens(board, layerTokens, scene, frame(), () => currentTool, () => {});
+  renderMarkup(layerAnnotations, frame());
+  refreshScrubRange();
 }
+
+// ---- Tools (bound once; read live state via accessors) ----
+initTools(board, layerAnnotations, {
+  getScene: () => scene,
+  getFrame: () => frame(),
+  getTool: () => currentTool,
+  getTeam: () => currentTeam,
+  onSceneChange: () => { renderTokens(board, layerTokens, scene, frame(), () => currentTool, () => {}); },
+  onMarkupChange: () => { renderMarkup(layerAnnotations, frame()); },
+});
 
 // Tool selection.
 document.querySelectorAll('.tool').forEach((btn) => {
   btn.addEventListener('click', () => {
     currentTool = btn.dataset.tool;
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-    // Tokens only drag in select mode; ignore pointer events on them otherwise.
-    layerTokens.style.pointerEvents = currentTool === 'select' ? 'auto' : 'none';
+  });
+});
+// Team toggle.
+document.querySelectorAll('.team').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    currentTeam = btn.dataset.team;
+    document.querySelectorAll('.team').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
   });
 });
 
-initTools(board, layerAnnotations, () => scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
+// ---- Steps / playback ----
+const scrub = document.getElementById('scrub');
+const stepLabel = document.getElementById('step-label');
+const btnDel = document.getElementById('btn-del-step');
+
+function updateStepLabel(pos) {
+  stepLabel.textContent = `Step ${Math.round(pos) + 1} / ${scene.frames.length}`;
+}
+function refreshScrubRange() {
+  scrub.max = String(Math.max(0, scene.frames.length - 1));
+  scrub.value = String(index);
+  updateStepLabel(index);
+  btnDel.disabled = scene.frames.length <= 1;
+}
+
+// Called by the controller during play/scrub: move tokens + swap active-frame markup.
+function applyPositions(positionsMap, pos) {
+  setTokenPositions(layerTokens, positionsMap);
+  const mi = Math.max(0, Math.min(scene.frames.length - 1, activeMarkupIndex(pos)));
+  renderMarkup(layerAnnotations, scene.frames[mi]);
+  scrub.value = String(pos);
+  updateStepLabel(pos);
+}
+
+// Settle onto an integer frame: make it current and fully re-render (so drag edits it).
+function settleTo(i) {
+  index = Math.max(0, Math.min(scene.frames.length - 1, Math.round(i)));
+  render();
+}
+
+const steps = createStepController({ getScene: () => scene, applyPositions, onDone: (i) => settleTo(i) });
+
+document.getElementById('btn-add-step').addEventListener('click', () => {
+  index = duplicateFrame(scene, index);
+  render();
+});
+btnDel.addEventListener('click', () => {
+  if (deleteFrame(scene, index)) { index = Math.min(index, scene.frames.length - 1); render(); }
+});
+document.getElementById('btn-play').addEventListener('click', () => steps.play());
+scrub.addEventListener('input', () => steps.scrubTo(Number(scrub.value)));
+scrub.addEventListener('change', () => settleTo(Number(scrub.value)));
+document.getElementById('btn-step-prev').addEventListener('click', () => { settleTo(index - 1); });
+document.getElementById('btn-step-next').addEventListener('click', () => { settleTo(index + 1); });
 
 // ---- Setup panel ----
 const panelSetup = document.getElementById('panel-setup');
 const elPreset = document.getElementById('setup-preset');
+const elHalf = document.getElementById('setup-half');
 const elTeamA = document.getElementById('setup-teamA');
 const elTeamB = document.getElementById('setup-teamB');
-const elHalf = document.getElementById('setup-half');
+const PRESET_COUNTS = { '11v11': 11, '9v9': 9, '7v7': 7 };
 
 function openSetup() {
   elPreset.value = scene.field.preset;
-  elTeamA.value = scene.field.teamA;
-  elTeamB.value = scene.field.teamB;
-  elHalf.checked = scene.field.half;
-  elTeamA.disabled = elTeamB.disabled = (elPreset.value !== 'custom');
-  panelSetup.hidden = false;
-}
-function closeSetup() { panelSetup.hidden = true; }
-
-// Presets lock team counts to equal sizes; custom allows independent counts.
-const PRESET_COUNTS = { '11v11': 11, '9v9': 9, '7v7': 7 };
-elPreset.addEventListener('change', () => {
-  const n = PRESET_COUNTS[elPreset.value];
+  elHalf.value = scene.field.half;
+  elTeamA.value = elTeamA.value || '11';
+  elTeamB.value = elTeamB.value || '11';
   const custom = elPreset.value === 'custom';
   elTeamA.disabled = elTeamB.disabled = !custom;
-  if (!custom) { elTeamA.value = n; elTeamB.value = n; }
+  panelSetup.hidden = false;
+}
+elPreset.addEventListener('change', () => {
+  const custom = elPreset.value === 'custom';
+  elTeamA.disabled = elTeamB.disabled = !custom;
+  if (!custom) { elTeamA.value = PRESET_COUNTS[elPreset.value]; elTeamB.value = PRESET_COUNTS[elPreset.value]; }
 });
-
 document.getElementById('btn-setup').addEventListener('click', openSetup);
-document.getElementById('setup-cancel').addEventListener('click', closeSetup);
+document.getElementById('setup-cancel').addEventListener('click', () => { panelSetup.hidden = true; });
 document.getElementById('setup-apply').addEventListener('click', () => {
-  const field = {
+  scene = createScene({
     preset: elPreset.value,
-    teamA: Math.max(1, Math.min(11, Number(elTeamA.value) || 1)),
-    teamB: Math.max(1, Math.min(11, Number(elTeamB.value) || 1)),
-    half: elHalf.checked,
-  };
-  scene = createScene(field, scene.name);
-  closeSetup();
-  render();
-  buildSteps();
-});
-
-// ---- Steps bar (add step / play / scrub) ----
-let steps = null;
-
-function applyPositions(snapshot, fractionalIndex) {
-  applyStep(scene, snapshot);         // write coords onto the model
-  renderTokens(board, layerTokens, scene, () => {}); // redraw tokens at new coords
-  if (fractionalIndex != null) {
-    scrub.value = String(fractionalIndex);
-    updateStepLabel(fractionalIndex);
-  }
-}
-
-function updateStepLabel(pos) {
-  const total = scene.steps.length;
-  const shown = total === 0 ? 0 : Math.round(pos) + 1;
-  stepLabel.textContent = `Step ${total === 0 ? 0 : shown} / ${total}`;
-}
-
-function refreshScrubRange() {
-  const max = Math.max(0, scene.steps.length - 1);
-  scrub.max = String(max);
-  scrub.value = String(max);
-  updateStepLabel(max);
-}
-
-function buildSteps() {
-  steps = createStepController({
-    scene,
-    applyPositions,
-    onStepsChanged: () => refreshScrubRange(),
+    half: elHalf.value,
+    teamA: Math.max(0, Math.min(11, Number(elTeamA.value) || 0)),
+    teamB: Math.max(0, Math.min(11, Number(elTeamB.value) || 0)),
+    name: scene.name,
   });
-  refreshScrubRange();
-}
-
-document.getElementById('btn-add-step').addEventListener('click', () => steps.addStep());
-document.getElementById('btn-play').addEventListener('click', () => steps.play());
-scrub.addEventListener('input', () => steps.scrubTo(Number(scrub.value)));
-document.getElementById('btn-step-prev').addEventListener('click', () => {
-  const v = Math.max(0, Math.round(Number(scrub.value)) - 1);
-  scrub.value = String(v); steps.scrubTo(v);
-});
-document.getElementById('btn-step-next').addEventListener('click', () => {
-  const v = Math.min(Number(scrub.max), Math.round(Number(scrub.value)) + 1);
-  scrub.value = String(v); steps.scrubTo(v);
-});
-
-function loadScene(next) {
-  scene = next;
+  index = 0;
+  panelSetup.hidden = true;
   render();
-  buildSteps();
-}
+});
 
-// ---- Save/Load panel ----
+// ---- Save / Load ----
 const panelSaveLoad = document.getElementById('panel-saveload');
 const savedList = document.getElementById('saved-list');
 const saveName = document.getElementById('save-name');
+
+function loadScene(next) { scene = next; index = 0; render(); }
 
 function refreshSavedList() {
   savedList.replaceChildren();
@@ -141,7 +149,8 @@ function refreshSavedList() {
     const loadBtn = document.createElement('button');
     loadBtn.textContent = 'Load';
     loadBtn.addEventListener('click', () => {
-      const s = loadNamed(name);
+      let s = null;
+      try { s = loadNamed(name); } catch { window.alert('That saved play is from an older version and cannot be loaded.'); return; }
       if (s) { loadScene(s); panelSaveLoad.hidden = true; }
     });
     const delBtn = document.createElement('button');
@@ -153,7 +162,6 @@ function refreshSavedList() {
     savedList.appendChild(li);
   }
 }
-
 document.getElementById('btn-saveload').addEventListener('click', () => {
   saveName.value = scene.name === 'Untitled' ? '' : scene.name;
   refreshSavedList();
@@ -177,8 +185,6 @@ document.getElementById('import-file').addEventListener('change', (e) => {
     .catch(() => window.alert('Could not read that file.'));
   e.target.value = '';
 });
-
-buildSteps();
 
 render();
 console.log('[goalpad] loaded');
