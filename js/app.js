@@ -2,17 +2,33 @@
 import { createScene } from './scene.js';
 import { renderField } from './field.js';
 import { renderTokens } from './tokens.js';
+import { renderAnnotations, initTools } from './tools.js';
 
 const board = document.getElementById('board');
 const layerField = document.getElementById('layer-field');
 const layerTokens = document.getElementById('layer-tokens');
+const layerAnnotations = document.getElementById('layer-annotations');
+let currentTool = 'select';
 
 let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: false });
 
 function render() {
   renderField(board, layerField, scene.field);
+  renderAnnotations(layerAnnotations, scene);
   renderTokens(board, layerTokens, scene, () => {});
 }
+
+// Tool selection.
+document.querySelectorAll('.tool').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    currentTool = btn.dataset.tool;
+    document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    // Tokens only drag in select mode; ignore pointer events on them otherwise.
+    layerTokens.style.pointerEvents = currentTool === 'select' ? 'auto' : 'none';
+  });
+});
+
+initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
 
 // ---- Setup panel ----
 const panelSetup = document.getElementById('panel-setup');
@@ -52,6 +68,7 @@ document.getElementById('setup-apply').addEventListener('click', () => {
   scene = createScene(field, scene.name);
   closeSetup();
   render();
+  initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
 });
 
 render();
