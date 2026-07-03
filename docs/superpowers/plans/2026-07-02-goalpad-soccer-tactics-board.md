@@ -792,7 +792,7 @@ git commit -m "feat: setup panel for field size, team counts, and small-sided sc
 - Consumes: `clientToSvg` from `tokens.js`; `scene.annotations`.
 - Produces:
   - `renderAnnotations(layerEl, scene)` — draws all annotations from the model.
-  - `initTools(svg, layerEl, scene, getTool, onChange)` — installs pointer handlers on the SVG that create/delete annotations based on the active tool; calls `onChange()` after any change.
+  - `initTools(svg, layerEl, getScene, getTool, onChange)` — installs pointer handlers on the SVG that create/delete annotations based on the active tool; reads the live scene via `getScene()`; calls `onChange()` after any change.
 
 - [ ] **Step 1: Implement `js/tools.js`**
 
@@ -858,7 +858,10 @@ export function renderAnnotations(layerEl, scene) {
   scene.annotations.forEach((a, i) => drawAnnotation(layerEl, a, i));
 }
 
-export function initTools(svg, layerEl, scene, getTool, onChange) {
+export function initTools(svg, layerEl, getScene, getTool, onChange) {
+  // Read the live scene via getScene() (not a captured `scene`) so the single
+  // listener binding follows scene reassignment. Every `scene.annotations`
+  // reference below is `getScene().annotations`.
   let draft = null; // in-progress annotation
 
   svg.addEventListener('pointerdown', (e) => {
@@ -945,14 +948,10 @@ document.querySelectorAll('.tool').forEach((btn) => {
   });
 });
 
-initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
+initTools(board, layerAnnotations, () => scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
 ```
 
-Note: `initTools` binds to the current `scene`. Because `scene` is reassigned in the Setup panel, move the `initTools(...)` call and the render into a single place is not required for v1 — but you MUST re-point tools after a setup rebuild. Add this line at the END of the `setup-apply` click handler, right after `render();`:
-
-```javascript
-  initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
-```
+Note: `initTools` reads the current scene through the `() => scene` accessor. Because `scene` is a module-level `let` that the Setup panel reassigns, this single binding automatically operates on the rebuilt scene — do NOT call `initTools` again after a setup rebuild (a second call would stack duplicate pointer listeners on the never-recreated `<svg>`, firing tool handlers like the text prompt multiple times).
 
 - [ ] **Step 3: Verify in the browser**
 
@@ -1212,7 +1211,7 @@ document.getElementById('btn-step-next').addEventListener('click', () => {
 buildSteps();
 ```
 
-(d) At the end of the `setup-apply` handler (after the existing `initTools(...)` line), add:
+(d) At the end of the `setup-apply` handler (after the existing `render();` line), add:
 
 ```javascript
   buildSteps();
@@ -1394,10 +1393,11 @@ import { saveNamed, listSaved, loadNamed, deleteNamed, exportScene, importSceneF
 function loadScene(next) {
   scene = next;
   render();
-  initTools(board, layerAnnotations, scene, () => currentTool, () => renderAnnotations(layerAnnotations, scene));
   buildSteps();
 }
 ```
+
+Note: `loadScene` does NOT re-call `initTools`. The annotation tools are bound once (in Task 6) via a `() => scene` accessor, and `scene` is a module-level `let`. Reassigning `scene` here means the single existing tool binding automatically operates on the newly loaded scene — re-calling `initTools` would stack duplicate listeners.
 
 (c) Wire the panel near the other panel wiring:
 
