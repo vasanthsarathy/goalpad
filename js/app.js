@@ -1,13 +1,16 @@
 // app.js — entry point. Owns the current scene and wires modules together.
-import { createScene } from './scene.js';
+import { createScene, applyStep } from './scene.js';
 import { renderField } from './field.js';
 import { renderTokens } from './tokens.js';
 import { renderAnnotations, initTools } from './tools.js';
+import { createStepController } from './steps.js';
 
 const board = document.getElementById('board');
 const layerField = document.getElementById('layer-field');
 const layerTokens = document.getElementById('layer-tokens');
 const layerAnnotations = document.getElementById('layer-annotations');
+const scrub = document.getElementById('scrub');
+const stepLabel = document.getElementById('step-label');
 let currentTool = 'select';
 
 let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: false });
@@ -68,7 +71,56 @@ document.getElementById('setup-apply').addEventListener('click', () => {
   scene = createScene(field, scene.name);
   closeSetup();
   render();
+  buildSteps();
 });
+
+// ---- Steps bar (add step / play / scrub) ----
+let steps = null;
+
+function applyPositions(snapshot, fractionalIndex) {
+  applyStep(scene, snapshot);         // write coords onto the model
+  renderTokens(board, layerTokens, scene, () => {}); // redraw tokens at new coords
+  if (fractionalIndex != null) {
+    scrub.value = String(fractionalIndex);
+    updateStepLabel(fractionalIndex);
+  }
+}
+
+function updateStepLabel(pos) {
+  const total = scene.steps.length;
+  const shown = total === 0 ? 0 : Math.round(pos) + 1;
+  stepLabel.textContent = `Step ${total === 0 ? 0 : shown} / ${total}`;
+}
+
+function refreshScrubRange() {
+  const max = Math.max(0, scene.steps.length - 1);
+  scrub.max = String(max);
+  scrub.value = String(max);
+  updateStepLabel(max);
+}
+
+function buildSteps() {
+  steps = createStepController({
+    scene,
+    applyPositions,
+    onStepsChanged: () => refreshScrubRange(),
+  });
+  refreshScrubRange();
+}
+
+document.getElementById('btn-add-step').addEventListener('click', () => steps.addStep());
+document.getElementById('btn-play').addEventListener('click', () => steps.play());
+scrub.addEventListener('input', () => steps.scrubTo(Number(scrub.value)));
+document.getElementById('btn-step-prev').addEventListener('click', () => {
+  const v = Math.max(0, Math.round(Number(scrub.value)) - 1);
+  scrub.value = String(v); steps.scrubTo(v);
+});
+document.getElementById('btn-step-next').addEventListener('click', () => {
+  const v = Math.min(Number(scrub.max), Math.round(Number(scrub.value)) + 1);
+  scrub.value = String(v); steps.scrubTo(v);
+});
+
+buildSteps();
 
 render();
 console.log('[goalpad] loaded');

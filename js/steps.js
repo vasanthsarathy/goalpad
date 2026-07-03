@@ -26,3 +26,56 @@ export function interpolateSteps(a, b, t) {
   };
   return { players, ball };
 }
+
+// ---- Browser playback controller (uses requestAnimationFrame; no import-time DOM) ----
+export function createStepController({ scene, applyPositions, onStepsChanged }) {
+  const SEGMENT_MS = 800;
+  let playing = false;
+
+  function addStep() {
+    scene.steps.push(captureStep(scene));
+    onStepsChanged(scene.steps.length);
+  }
+
+  // pos is a fractional index across steps: 0 .. steps.length-1
+  function scrubTo(pos) {
+    const steps = scene.steps;
+    if (steps.length === 0) return;
+    if (steps.length === 1) { applyPositions(steps[0]); return; }
+    const clamped = Math.max(0, Math.min(steps.length - 1, pos));
+    const seg = Math.min(Math.floor(clamped), steps.length - 2);
+    const t = clamped - seg;
+    applyPositions(interpolateSteps(steps[seg], steps[seg + 1], t));
+  }
+
+  function play() {
+    const steps = scene.steps;
+    if (playing || steps.length < 2) return;
+    playing = true;
+    let seg = 0;
+    let start = null;
+    function frame(ts) {
+      if (!playing) return;
+      if (start == null) start = ts;
+      const raw = Math.min(1, (ts - start) / SEGMENT_MS);
+      applyPositions(interpolateSteps(steps[seg], steps[seg + 1], ease(raw)), seg + raw);
+      if (raw < 1) {
+        requestAnimationFrame(frame);
+      } else if (seg < steps.length - 2) {
+        seg += 1; start = null; requestAnimationFrame(frame);
+      } else {
+        playing = false;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  return {
+    addStep,
+    play,
+    scrubTo,
+    next() { /* index-based nav handled by app via scrubTo */ },
+    prev() {},
+    get count() { return scene.steps.length; },
+  };
+}
