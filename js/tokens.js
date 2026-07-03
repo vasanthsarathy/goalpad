@@ -63,7 +63,7 @@ export function renderTokens(svg, layerEl, scene, frame, getTool, onChange) {
     const pos = frame.positions[piece.id] || { x: 0, y: 0 };
     const g = el('g', { transform: `translate(${pos.x}, ${pos.y})` });
     g.dataset.tokenId = piece.id;
-    if (piece.kind === 'player') g.style.cursor = 'grab';
+    g.style.cursor = 'grab';
     for (const s of shapeFor(piece)) g.appendChild(s);
     makeDraggable(svg, g, frame, piece.id, getTool, onChange);
     layerEl.appendChild(g);

@@ -107,9 +107,8 @@ const PRESET_COUNTS = { '11v11': 11, '9v9': 9, '7v7': 7 };
 function openSetup() {
   elPreset.value = scene.field.preset;
   elHalf.value = scene.field.half;
-  elTeamA.value = elTeamA.value || '11';
-  elTeamB.value = elTeamB.value || '11';
   const custom = elPreset.value === 'custom';
+  if (!custom) { elTeamA.value = elTeamB.value = PRESET_COUNTS[scene.field.preset]; }
   elTeamA.disabled = elTeamB.disabled = !custom;
   panelSetup.hidden = false;
 }
