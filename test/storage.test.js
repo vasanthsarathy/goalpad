@@ -37,3 +37,11 @@ test('deserialize rejects a legacy v1 scene (players/steps, no pieces/frames)', 
   });
   assert.throws(() => deserialize(legacy));
 });
+
+test('deserialize throws on a malformed frame', () => {
+  const base = { field: { preset: '11v11', half: 'full' }, pieces: [] };
+  // positions not an object
+  assert.throws(() => deserialize(JSON.stringify({ ...base, frames: [{ positions: null, markup: [] }] })));
+  // markup not an array
+  assert.throws(() => deserialize(JSON.stringify({ ...base, frames: [{ positions: {}, markup: 'x' }] })));
+});
