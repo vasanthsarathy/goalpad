@@ -26,6 +26,7 @@ function openSetup() {
   elTeamA.value = scene.field.teamA;
   elTeamB.value = scene.field.teamB;
   elHalf.checked = scene.field.half;
+  elTeamA.disabled = elTeamB.disabled = (elPreset.value !== 'custom');
   panelSetup.hidden = false;
 }
 function closeSetup() { panelSetup.hidden = true; }
