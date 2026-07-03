@@ -54,3 +54,8 @@ button:active { filter: brightness(1.2); }
   .tool { padding: 8px 10px; font-size: 14px; }
   #stepsbar { flex-wrap: wrap; }
 }
+#team-toggle { display: inline-flex; gap: 4px; margin: 0 4px; }
+.team { font-size: 14px; padding: 8px 10px; min-height: 44px; border: none; border-radius: 8px; background: #3b4250; color: #f2f4f7; opacity: 0.55; }
+.team[data-team="A"][aria-pressed="true"] { background: #2f6fed; opacity: 1; }
+.team[data-team="B"][aria-pressed="true"] { background: #e8552d; opacity: 1; }
+#btn-del-step:disabled { opacity: 0.4; }

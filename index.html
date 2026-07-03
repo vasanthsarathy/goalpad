@@ -28,9 +28,14 @@
 
   <nav id="toolbar">
     <button class="tool" data-tool="select" aria-pressed="true">👆 Select</button>
+    <button class="tool" data-tool="add">➕ Player</button>
+    <span id="team-toggle">
+      <button class="team" data-team="A" aria-pressed="true">Blue</button>
+      <button class="team" data-team="B">Orange</button>
+    </span>
+    <button class="tool" data-tool="cone">🔺 Cone</button>
     <button class="tool" data-tool="arrow">↗ Arrow</button>
     <button class="tool" data-tool="pen">✎ Pen</button>
-    <button class="tool" data-tool="cone">▲ Cone</button>
     <button class="tool" data-tool="text">T Text</button>
     <button class="tool" data-tool="delete">🗑 Delete</button>
   </nav>
@@ -39,8 +44,9 @@
     <button id="btn-step-prev" type="button">◀</button>
     <input id="scrub" type="range" min="0" max="0" step="0.01" value="0">
     <button id="btn-step-next" type="button">▶</button>
-    <span id="step-label">Step 0 / 0</span>
-    <button id="btn-add-step" type="button">+ Add step</button>
+    <span id="step-label">Step 1 / 1</span>
+    <button id="btn-add-step" type="button">+ Frame</button>
+    <button id="btn-del-step" type="button">🗑 Frame</button>
     <button id="btn-play" type="button">▶ Play</button>
   </footer>
 
@@ -55,10 +61,16 @@
           <option value="custom">Custom (small-sided grid)</option>
         </select>
       </label>
-      <label>Team A players <input id="setup-teamA" type="number" min="1" max="11" value="11"></label>
-      <label>Team B players <input id="setup-teamB" type="number" min="1" max="11" value="11"></label>
-      <label><input id="setup-half" type="checkbox"> Half pitch</label>
-      <p class="panel-note">Changing the setup rebuilds the board with default positions.</p>
+      <label>Pitch
+        <select id="setup-half">
+          <option value="full">Full</option>
+          <option value="left">Left half</option>
+          <option value="right">Right half</option>
+        </select>
+      </label>
+      <label>Team A (blue) players <input id="setup-teamA" type="number" min="0" max="11" value="11"></label>
+      <label>Team B (orange) players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
+      <p class="panel-note">Set both counts to 0 for an empty pitch. Changing the setup rebuilds the board.</p>
       <div class="panel-actions">
         <button id="setup-cancel" type="button">Cancel</button>
         <button id="setup-apply" type="button">Apply</button>
