@@ -59,3 +59,4 @@ button:active { filter: brightness(1.2); }
 .team[data-team="A"][aria-pressed="true"] { background: #2f6fed; opacity: 1; }
 .team[data-team="B"][aria-pressed="true"] { background: #e8552d; opacity: 1; }
 #btn-del-step:disabled { opacity: 0.4; }
+#layer-tokens { filter: drop-shadow(0 2px 3px rgba(5,18,11,0.5)); }
