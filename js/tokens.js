@@ -1,7 +1,7 @@
-// tokens.js — DOM: render players + ball and make them draggable.
+// tokens.js — DOM: render pieces (player/ball/cone) from a frame; drag in select mode.
 const SVGNS = 'http://www.w3.org/2000/svg';
 const COLORS = { A: '#2f6fed', B: '#e8552d' };
-const R = 16; // token radius in viewBox units
+const R = 16; // player token radius (viewBox units)
 
 export function clientToSvg(svg, clientX, clientY) {
   const pt = svg.createSVGPoint();
@@ -10,9 +10,33 @@ export function clientToSvg(svg, clientX, clientY) {
   return { x: p.x, y: p.y };
 }
 
-function makeDraggable(svg, groupEl, model, onChange) {
+function el(name, attrs) {
+  const node = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+
+function shapeFor(piece) {
+  if (piece.kind === 'player') {
+    const c = el('circle', { r: R, fill: COLORS[piece.team], stroke: 'white', 'stroke-width': '2' });
+    const t = el('text', {
+      'text-anchor': 'middle', 'dominant-baseline': 'central',
+      fill: 'white', 'font-size': '16', 'font-weight': '700',
+    });
+    t.textContent = String(piece.number);
+    return [c, t];
+  }
+  if (piece.kind === 'ball') {
+    return [el('circle', { r: R * 0.55, fill: '#ffffff', stroke: '#1e232b', 'stroke-width': '2' })];
+  }
+  // cone
+  return [el('path', { d: `M0,-12 L-10,8 L10,8 Z`, fill: '#ff9f1c', stroke: '#5a3a00', 'stroke-width': '1.5' })];
+}
+
+function makeDraggable(svg, groupEl, frame, id, getTool, onChange) {
   let dragging = false;
   groupEl.addEventListener('pointerdown', (e) => {
+    if (getTool() !== 'select') return; // let non-select tools handle the event
     dragging = true;
     groupEl.setPointerCapture(e.pointerId);
     e.stopPropagation();
@@ -20,8 +44,8 @@ function makeDraggable(svg, groupEl, model, onChange) {
   groupEl.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const { x, y } = clientToSvg(svg, e.clientX, e.clientY);
-    model.x = Math.round(x); model.y = Math.round(y);
-    groupEl.setAttribute('transform', `translate(${model.x}, ${model.y})`);
+    frame.positions[id] = { x: Math.round(x), y: Math.round(y) };
+    groupEl.setAttribute('transform', `translate(${frame.positions[id].x}, ${frame.positions[id].y})`);
   });
   const end = (e) => {
     if (!dragging) return;
@@ -33,49 +57,22 @@ function makeDraggable(svg, groupEl, model, onChange) {
   groupEl.addEventListener('pointercancel', end);
 }
 
-function playerGroup(svg, player, onChange) {
-  const g = document.createElementNS(SVGNS, 'g');
-  g.setAttribute('transform', `translate(${player.x}, ${player.y})`);
-  g.style.cursor = 'grab';
-  g.dataset.tokenId = player.id;
-
-  const c = document.createElementNS(SVGNS, 'circle');
-  c.setAttribute('r', R);
-  c.setAttribute('fill', COLORS[player.team]);
-  c.setAttribute('stroke', 'white');
-  c.setAttribute('stroke-width', '2');
-
-  const t = document.createElementNS(SVGNS, 'text');
-  t.setAttribute('text-anchor', 'middle');
-  t.setAttribute('dominant-baseline', 'central');
-  t.setAttribute('fill', 'white');
-  t.setAttribute('font-size', '16');
-  t.setAttribute('font-weight', '700');
-  t.textContent = String(player.number);
-
-  g.append(c, t);
-  makeDraggable(svg, g, player, onChange);
-  return g;
-}
-
-function ballGroup(svg, ball, onChange) {
-  const g = document.createElementNS(SVGNS, 'g');
-  g.setAttribute('transform', `translate(${ball.x}, ${ball.y})`);
-  g.dataset.tokenId = 'ball';
-  const c = document.createElementNS(SVGNS, 'circle');
-  c.setAttribute('r', R * 0.55);
-  c.setAttribute('fill', '#ffffff');
-  c.setAttribute('stroke', '#1e232b');
-  c.setAttribute('stroke-width', '2');
-  g.append(c);
-  makeDraggable(svg, g, ball, onChange);
-  return g;
-}
-
-export function renderTokens(svg, layerEl, scene, onChange) {
+export function renderTokens(svg, layerEl, scene, frame, getTool, onChange) {
   layerEl.replaceChildren();
-  for (const player of scene.players) {
-    layerEl.appendChild(playerGroup(svg, player, onChange));
+  for (const piece of scene.pieces) {
+    const pos = frame.positions[piece.id] || { x: 0, y: 0 };
+    const g = el('g', { transform: `translate(${pos.x}, ${pos.y})` });
+    g.dataset.tokenId = piece.id;
+    if (piece.kind === 'player') g.style.cursor = 'grab';
+    for (const s of shapeFor(piece)) g.appendChild(s);
+    makeDraggable(svg, g, frame, piece.id, getTool, onChange);
+    layerEl.appendChild(g);
   }
-  layerEl.appendChild(ballGroup(svg, scene.ball, onChange));
+}
+
+export function setTokenPositions(layerEl, positionsMap) {
+  for (const g of layerEl.querySelectorAll('[data-token-id]')) {
+    const p = positionsMap[g.dataset.tokenId];
+    if (p) g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+  }
 }
