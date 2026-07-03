@@ -1,27 +1,47 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { serialize, deserialize } from '../js/storage.js';
-import { createScene } from '../js/scene.js';
+import { createScene, duplicateFrame } from '../js/scene.js';
 
-test('serialize then deserialize round-trips a scene', () => {
-  const scene = createScene({ preset: '7v7', teamA: 7, teamB: 7, half: false }, 'My Play');
+test('serialize then deserialize round-trips a frames scene', () => {
+  const scene = createScene({ preset: '7v7', teamA: 7, teamB: 7, half: 'left', name: 'P' });
+  duplicateFrame(scene, 0);
   const back = deserialize(serialize(scene));
-  assert.equal(back.name, 'My Play');
-  assert.equal(back.players.length, 14);
-  assert.deepEqual(back.field, scene.field);
+  assert.equal(back.name, 'P');
+  assert.equal(back.field.half, 'left');
+  assert.equal(back.pieces.length, 15); // 14 players + ball
+  assert.equal(back.frames.length, 2);
 });
 
-test('deserialize fills in missing arrays with empty defaults', () => {
-  const back = deserialize(JSON.stringify({ name: 'x', field: { preset: 'custom', teamA: 2, teamB: 1, half: false }, players: [], ball: { x: 0, y: 0 } }));
-  assert.deepEqual(back.annotations, []);
-  assert.deepEqual(back.steps, []);
+test('deserialize defaults an unknown half to full', () => {
+  const scene = createScene({ preset: 'custom', teamA: 1, teamB: 1, half: 'full' });
+  const raw = JSON.parse(serialize(scene));
+  raw.field.half = 'weird';
+  assert.equal(deserialize(JSON.stringify(raw)).field.half, 'full');
 });
 
 test('deserialize throws on invalid JSON', () => {
   assert.throws(() => deserialize('not json'));
 });
 
-test('deserialize throws on a scene missing a valid field', () => {
+test('deserialize throws on a missing/invalid field preset', () => {
   assert.throws(() => deserialize('{}'));
-  assert.throws(() => deserialize(JSON.stringify({ field: { preset: 'nope' } })));
+  assert.throws(() => deserialize(JSON.stringify({ field: { preset: 'nope' }, pieces: [], frames: [{ positions: {}, markup: [] }] })));
+});
+
+test('deserialize rejects a legacy v1 scene (players/steps, no pieces/frames)', () => {
+  const legacy = JSON.stringify({
+    name: 'old', field: { preset: '11v11', half: false },
+    players: [{ id: 'A1', team: 'A', number: 1, x: 1, y: 1 }],
+    ball: { x: 0, y: 0 }, annotations: [], steps: [],
+  });
+  assert.throws(() => deserialize(legacy));
+});
+
+test('deserialize throws on a malformed frame', () => {
+  const base = { field: { preset: '11v11', half: 'full' }, pieces: [] };
+  // positions not an object
+  assert.throws(() => deserialize(JSON.stringify({ ...base, frames: [{ positions: null, markup: [] }] })));
+  // markup not an array
+  assert.throws(() => deserialize(JSON.stringify({ ...base, frames: [{ positions: {}, markup: 'x' }] })));
 });

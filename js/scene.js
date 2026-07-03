@@ -1,18 +1,15 @@
-// scene.js — PURE model helpers. No DOM/window access anywhere in this file.
+// scene.js — PURE model helpers (entities + frames). No DOM/window access anywhere.
 
 export const FIELD_DIMS = {
   '11v11': { length_m: 105, width_m: 68 },
   '9v9':   { length_m: 75,  width_m: 50 },
   '7v7':   { length_m: 55,  width_m: 37 },
-  'custom':{ length_m: 40,  width_m: 30 }, // compact grid, good for 2v1 / 3v2
+  'custom':{ length_m: 40,  width_m: 30 },
 };
-
-// Presets have a dedicated goalkeeper as player #1; custom grids do not.
-const PRESETS_WITH_GK = new Set(['11v11', '9v9', '7v7']);
 
 export function fieldViewBox(field) {
   const dims = FIELD_DIMS[field.preset] || FIELD_DIMS.custom;
-  const length = field.half ? dims.length_m / 2 : dims.length_m;
+  const length = field.half === 'full' ? dims.length_m : dims.length_m / 2;
   return { w: Math.round(length * 10), h: Math.round(dims.width_m * 10) };
 }
 
@@ -33,52 +30,91 @@ function spread(count, xMin, xMax, yMin, yMax) {
   return pts;
 }
 
-function playersForTeam(team, count, field) {
+// team 'A' occupies the left of the current view, 'B' the right.
+export function defaultPositions(field, team, count) {
   const { w, h } = fieldViewBox(field);
-  const hasGK = PRESETS_WITH_GK.has(field.preset);
-  const attacksRight = team === 'A';
-  const halfMin = attacksRight ? 0 : w / 2;
-  const halfMax = attacksRight ? w / 2 : w;
-  const out = [];
-  let outfield = count;
-  if (hasGK && count >= 1) {
-    const gx = attacksRight ? Math.round(w * 0.04) : Math.round(w * 0.96);
-    out.push({ id: `${team}1`, team, number: 1, x: gx, y: Math.round(h / 2) });
-    outfield = count - 1;
-  }
   const margin = w * 0.06;
-  const pts = spread(outfield, halfMin + margin, halfMax - margin, h * 0.1, h * 0.9);
-  for (let i = 0; i < outfield; i++) {
-    const number = (hasGK ? i + 2 : i + 1);
-    out.push({ id: `${team}${number}`, team, number, x: pts[i].x, y: pts[i].y });
-  }
-  return out;
+  const xMin = team === 'A' ? margin : w / 2 + margin * 0.5;
+  const xMax = team === 'A' ? w / 2 - margin * 0.5 : w - margin;
+  return spread(count, xMin, xMax, h * 0.1, h * 0.9);
 }
 
-export function defaultPlayers(field) {
-  return [
-    ...playersForTeam('A', field.teamA, field),
-    ...playersForTeam('B', field.teamB, field),
-  ];
-}
-
-export function createScene(field, name = 'Untitled') {
+export function createScene(opts) {
+  const field = { preset: opts.preset, half: opts.half || 'full' };
   const { w, h } = fieldViewBox(field);
+  const pieces = [];
+  const positions = {};
+
+  const addTeam = (team, count) => {
+    const pts = defaultPositions(field, team, count);
+    for (let i = 0; i < count; i++) {
+      const number = i + 1;
+      const id = `${team}${number}`;
+      pieces.push({ id, kind: 'player', team, number });
+      positions[id] = pts[i];
+    }
+  };
+  addTeam('A', opts.teamA);
+  addTeam('B', opts.teamB);
+
+  pieces.push({ id: 'ball', kind: 'ball' });
+  positions['ball'] = { x: Math.round(w / 2), y: Math.round(h / 2) };
+
   return {
-    name,
-    field: { preset: field.preset, teamA: field.teamA, teamB: field.teamB, half: !!field.half },
-    players: defaultPlayers(field),
-    ball: { x: Math.round(w / 2), y: Math.round(h / 2) },
-    annotations: [],
-    steps: [],
+    name: opts.name || 'Untitled',
+    field,
+    pieces,
+    frames: [{ positions, markup: [] }],
   };
 }
 
-export function applyStep(scene, step) {
-  const byId = new Map(step.players.map(p => [p.id, p]));
-  for (const player of scene.players) {
-    const snap = byId.get(player.id);
-    if (snap) { player.x = snap.x; player.y = snap.y; }
-  }
-  if (step.ball) { scene.ball.x = step.ball.x; scene.ball.y = step.ball.y; }
+export function pieceById(scene, id) {
+  return scene.pieces.find(p => p.id === id) || null;
+}
+
+function nextNumber(scene, team) {
+  const used = new Set(
+    scene.pieces.filter(p => p.kind === 'player' && p.team === team).map(p => p.number)
+  );
+  let n = 1;
+  while (used.has(n)) n++;
+  return n;
+}
+
+export function addPlayer(scene, team, x, y) {
+  const number = nextNumber(scene, team);
+  const id = `${team}${number}`;
+  scene.pieces.push({ id, kind: 'player', team, number });
+  for (const f of scene.frames) f.positions[id] = { x: Math.round(x), y: Math.round(y) };
+  return id;
+}
+
+export function addCone(scene, x, y) {
+  const nums = scene.pieces
+    .filter(p => p.kind === 'cone')
+    .map(p => Number(p.id.split('-')[1]) || 0);
+  const n = (nums.length ? Math.max(...nums) : 0) + 1;
+  const id = `cone-${n}`;
+  scene.pieces.push({ id, kind: 'cone' });
+  for (const f of scene.frames) f.positions[id] = { x: Math.round(x), y: Math.round(y) };
+  return id;
+}
+
+export function removePiece(scene, id) {
+  scene.pieces = scene.pieces.filter(p => p.id !== id);
+  for (const f of scene.frames) delete f.positions[id];
+}
+
+export function duplicateFrame(scene, index) {
+  const src = scene.frames[index];
+  const positions = {};
+  for (const [id, p] of Object.entries(src.positions)) positions[id] = { x: p.x, y: p.y };
+  scene.frames.splice(index + 1, 0, { positions, markup: [] });
+  return index + 1;
+}
+
+export function deleteFrame(scene, index) {
+  if (scene.frames.length <= 1) return false;
+  scene.frames.splice(index, 1);
+  return true;
 }

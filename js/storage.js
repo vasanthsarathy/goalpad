@@ -1,6 +1,7 @@
 // storage.js — PURE serialize/deserialize (top), browser persistence (bottom).
 const KEY_PREFIX = 'goalpad:scene:';
 const VALID_PRESETS = new Set(['11v11', '9v9', '7v7', 'custom']);
+const VALID_HALF = new Set(['full', 'left', 'right']);
 
 export function serialize(scene) {
   return JSON.stringify(scene);
@@ -8,20 +9,30 @@ export function serialize(scene) {
 
 export function deserialize(str) {
   const raw = JSON.parse(str); // throws on invalid JSON
+  if (!raw || typeof raw !== 'object') throw new Error('Invalid scene');
   if (!raw.field || !VALID_PRESETS.has(raw.field.preset)) {
     throw new Error('Invalid scene: missing or unknown field preset');
   }
+  if (!Array.isArray(raw.pieces) || !Array.isArray(raw.frames) || raw.frames.length < 1) {
+    throw new Error('Invalid or legacy scene: expected pieces[] and frames[]');
+  }
+  for (const f of raw.frames) {
+    if (!f || typeof f.positions !== 'object' || f.positions === null || !Array.isArray(f.markup)) {
+      throw new Error('Invalid frame');
+    }
+  }
   return {
     name: raw.name || 'Untitled',
-    field: raw.field,
-    players: Array.isArray(raw.players) ? raw.players : [],
-    ball: raw.ball || { x: 0, y: 0 },
-    annotations: Array.isArray(raw.annotations) ? raw.annotations : [],
-    steps: Array.isArray(raw.steps) ? raw.steps : [],
+    field: {
+      preset: raw.field.preset,
+      half: VALID_HALF.has(raw.field.half) ? raw.field.half : 'full',
+    },
+    pieces: raw.pieces,
+    frames: raw.frames,
   };
 }
 
-// ---- Browser-only below (localStorage / DOM used inside functions only) ----
+// ---- Browser-only below ----
 
 export function saveNamed(name, scene) {
   localStorage.setItem(KEY_PREFIX + name, serialize({ ...scene, name }));
