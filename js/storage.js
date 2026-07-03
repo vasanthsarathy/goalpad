@@ -1,5 +1,6 @@
 // storage.js — PURE serialize/deserialize (top), browser persistence (bottom).
 const KEY_PREFIX = 'goalpad:scene:';
+const VALID_PRESETS = new Set(['11v11', '9v9', '7v7', 'custom']);
 
 export function serialize(scene) {
   return JSON.stringify(scene);
@@ -7,6 +8,9 @@ export function serialize(scene) {
 
 export function deserialize(str) {
   const raw = JSON.parse(str); // throws on invalid JSON
+  if (!raw.field || !VALID_PRESETS.has(raw.field.preset)) {
+    throw new Error('Invalid scene: missing or unknown field preset');
+  }
   return {
     name: raw.name || 'Untitled',
     field: raw.field,

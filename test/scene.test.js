@@ -57,10 +57,14 @@ test('createScene centers the ball and starts with no steps', () => {
 test('applyStep writes snapshot coords back onto matching players', () => {
   const scene = createScene({ preset: 'custom', teamA: 1, teamB: 1, half: false });
   const id = scene.players[0].id;
+  const other = scene.players[1];
+  const otherBefore = { x: other.x, y: other.y };
   applyStep(scene, { players: [{ id, x: 123, y: 45 }], ball: { x: 10, y: 20 } });
   assert.deepEqual(
     { x: scene.players.find(p => p.id === id).x, y: scene.players.find(p => p.id === id).y },
     { x: 123, y: 45 }
   );
   assert.deepEqual(scene.ball, { x: 10, y: 20 });
+  const otherAfter = scene.players.find(p => p.id === other.id);
+  assert.deepEqual({ x: otherAfter.x, y: otherAfter.y }, otherBefore);
 });

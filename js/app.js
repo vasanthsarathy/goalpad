@@ -167,8 +167,8 @@ document.getElementById('save-current').addEventListener('click', () => {
   refreshSavedList();
 });
 document.getElementById('export-current').addEventListener('click', () => {
-  scene.name = (saveName.value || scene.name || 'scene').trim();
-  exportScene(scene);
+  const name = (saveName.value || scene.name || 'scene').trim();
+  exportScene({ ...scene, name });
 });
 document.getElementById('import-file').addEventListener('change', (e) => {
   const file = e.target.files[0];

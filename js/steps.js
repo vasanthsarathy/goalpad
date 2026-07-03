@@ -41,11 +41,11 @@ export function createStepController({ scene, applyPositions, onStepsChanged }) 
   function scrubTo(pos) {
     const steps = scene.steps;
     if (steps.length === 0) return;
-    if (steps.length === 1) { applyPositions(steps[0]); return; }
+    if (steps.length === 1) { applyPositions(steps[0], 0); return; }
     const clamped = Math.max(0, Math.min(steps.length - 1, pos));
     const seg = Math.min(Math.floor(clamped), steps.length - 2);
     const t = clamped - seg;
-    applyPositions(interpolateSteps(steps[seg], steps[seg + 1], t));
+    applyPositions(interpolateSteps(steps[seg], steps[seg + 1], t), clamped);
   }
 
   function play() {

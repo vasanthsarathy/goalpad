@@ -20,3 +20,8 @@ test('deserialize fills in missing arrays with empty defaults', () => {
 test('deserialize throws on invalid JSON', () => {
   assert.throws(() => deserialize('not json'));
 });
+
+test('deserialize throws on a scene missing a valid field', () => {
+  assert.throws(() => deserialize('{}'));
+  assert.throws(() => deserialize(JSON.stringify({ field: { preset: 'nope' } })));
+});
