@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene, pieceById, addPlayer, addCone, removePiece, duplicateFrame, deleteFrame } from '../js/scene.js';
+import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene, pieceById, addPlayer, addCone, addBall, removePiece, duplicateFrame, deleteFrame } from '../js/scene.js';
 
 test('fieldViewBox full uses preset dims in tenths of a metre', () => {
   assert.deepEqual(fieldViewBox({ preset: '11v11', half: 'full' }), { w: 1050, h: 680 });
@@ -114,4 +114,27 @@ test('deleteFrame removes a frame but never the last one', () => {
   duplicateFrame(scene, 0);
   assert.equal(deleteFrame(scene, 1), true);
   assert.equal(scene.frames.length, 1);
+});
+
+test('addBall adds a ball with a position in every frame when absent', () => {
+  const scene = createScene({ preset: '7v7', teamA: 3, teamB: 3, half: 'full' });
+  // remove the default ball first
+  scene.pieces = scene.pieces.filter((p) => p.kind !== 'ball');
+  for (const f of scene.frames) delete f.positions.ball;
+  scene.frames.push({ positions: { ...scene.frames[0].positions }, markup: [] });
+
+  const id = addBall(scene, 100, 120);
+  assert.equal(id, 'ball');
+  assert.equal(scene.pieces.filter((p) => p.kind === 'ball').length, 1);
+  for (const f of scene.frames) {
+    assert.ok(f.positions.ball, 'every frame has a ball position');
+  }
+  assert.deepEqual(scene.frames[0].positions.ball, { x: 100, y: 120 });
+});
+
+test('addBall is a no-op returning null when a ball already exists', () => {
+  const scene = createScene({ preset: '7v7', teamA: 3, teamB: 3, half: 'full' });
+  const before = scene.pieces.length;
+  assert.equal(addBall(scene, 5, 5), null);
+  assert.equal(scene.pieces.length, before);
 });

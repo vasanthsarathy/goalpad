@@ -107,3 +107,12 @@ button:active { opacity: 0.6; }
 #editor[data-mode="watch"] #btn-setup,
 #editor[data-mode="watch"] #btn-done { display: none; }
 #editor[data-mode="build"] #btn-edit { display: none; }
+
+/* ---- Build chips + selection chip ---- */
+.chip { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 6px; border: none; border-bottom: 2px solid transparent; background: transparent; cursor: pointer; }
+.chip[aria-pressed="true"] { border-bottom-color: #0a0a0a; }
+.chip svg { display: block; }
+.tool-divider { width: 1px; align-self: stretch; background: #0a0a0a; margin: 8px 4px; }
+.sel-chip { position: fixed; z-index: 25; background: #ffffff; border: 1px solid #0a0a0a; border-radius: 0; display: flex; }
+.sel-item { text-align: left; padding: 8px 14px; min-height: 40px; color: #0a0a0a; border-right: 1px solid #ececec; }
+.sel-item:last-child { border-right: none; }
