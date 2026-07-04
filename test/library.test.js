@@ -33,3 +33,8 @@ test('every frame has a position for every piece', () => {
     }
   }
 });
+
+test('library ships 9 tactics and 5 drills', () => {
+  assert.equal(LIBRARY.filter((p) => p.category === 'tactics').length, 9);
+  assert.equal(LIBRARY.filter((p) => p.category === 'drills').length, 5);
+});
