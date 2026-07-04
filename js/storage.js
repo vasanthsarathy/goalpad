@@ -69,3 +69,67 @@ export function exportScene(scene) {
 export function importSceneFile(file) {
   return file.text().then(deserialize);
 }
+
+// ---- Mine (saved tactics) + migration ----
+const MINE_PREFIX = 'goalpad:mine:';
+const MIGRATED_FLAG = 'goalpad:migrated:mine-v1';
+
+function freshId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// pure: build a tactic record from a name + scene
+export function newTactic(name, scene) {
+  const n = (name || 'Untitled').trim() || 'Untitled';
+  return { id: freshId(), name: n, scene: { ...scene, name: n }, updatedAt: Date.now() };
+}
+
+// pure: given legacy [{name, str}], return [{name, scene}] for entries that deserialize
+export function validLegacyEntries(entries) {
+  const out = [];
+  for (const e of entries) {
+    try { out.push({ name: e.name, scene: deserialize(e.str) }); } catch { /* skip invalid */ }
+  }
+  return out;
+}
+
+export function saveMine(tactic) {
+  localStorage.setItem(MINE_PREFIX + tactic.id, JSON.stringify(tactic));
+}
+
+export function listMine() {
+  const out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(MINE_PREFIX)) continue;
+    try {
+      const rec = JSON.parse(localStorage.getItem(key));
+      if (rec && rec.id && rec.scene) out.push({ id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0 });
+    } catch { /* skip corrupt */ }
+  }
+  return out.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export function loadMine(id) {
+  const str = localStorage.getItem(MINE_PREFIX + id);
+  if (!str) return null;
+  const rec = JSON.parse(str);
+  return { id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, scene: deserialize(JSON.stringify(rec.scene)) };
+}
+
+export function deleteMine(id) { localStorage.removeItem(MINE_PREFIX + id); }
+
+// one-time: copy legacy goalpad:scene:<name> plays into Mine
+export function migrateLegacyPlays() {
+  if (localStorage.getItem(MIGRATED_FLAG)) return 0;
+  const entries = [];
+  for (const name of listSaved()) {
+    const str = localStorage.getItem(KEY_PREFIX + name);
+    if (str) entries.push({ name, str });
+  }
+  const valid = validLegacyEntries(entries);
+  for (const { name, scene } of valid) saveMine(newTactic(name, scene));
+  localStorage.setItem(MIGRATED_FLAG, '1');
+  return valid.length;
+}
