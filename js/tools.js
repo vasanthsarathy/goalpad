@@ -16,7 +16,7 @@ function ensureMarker(layerEl) {
   if (layerEl.querySelector('#arrowhead')) return;
   const defs = document.createElementNS(SVGNS, 'defs');
   const marker = el('marker', { id: 'arrowhead', markerWidth: '8', markerHeight: '8', refX: '6', refY: '3', orient: 'auto', markerUnits: 'strokeWidth' });
-  marker.appendChild(el('path', { d: 'M0,0 L6,3 L0,6 Z', fill: '#ffe14d' }));
+  marker.appendChild(el('path', { d: 'M0,0 L6,3 L0,6 Z', fill: '#f0cf55' }));
   defs.appendChild(marker);
   layerEl.appendChild(defs);
 }
@@ -24,10 +24,10 @@ function ensureMarker(layerEl) {
 function drawOne(layerEl, a, index) {
   let node;
   if (a.type === 'arrow') {
-    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#ffe14d', 'stroke-width': '4', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
+    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#f0cf55', 'stroke-width': '4', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
   } else if (a.type === 'pen') {
     const d = a.points.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
-    node = el('path', { d, fill: 'none', stroke: '#ffe14d', 'stroke-width': '4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    node = el('path', { d, fill: 'none', stroke: '#f0cf55', 'stroke-width': '4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
   } else if (a.type === 'text') {
     node = el('text', { x: a.x, y: a.y, fill: '#ffffff', 'font-size': '20', 'font-weight': '700', 'text-anchor': 'middle' });
     node.textContent = a.text;

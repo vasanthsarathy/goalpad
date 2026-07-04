@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#1e232b">
+  <meta name="theme-color" content="#0f1216">
   <title>goalpad</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -27,17 +27,17 @@
   </main>
 
   <nav id="toolbar">
-    <button class="tool" data-tool="select" aria-pressed="true">👆 Select</button>
-    <button class="tool" data-tool="add">➕ Player</button>
+    <button class="tool" data-tool="select" aria-pressed="true">Select</button>
+    <button class="tool" data-tool="add">Player</button>
     <span id="team-toggle">
       <button class="team" data-team="A" aria-pressed="true">Blue</button>
-      <button class="team" data-team="B">Orange</button>
+      <button class="team" data-team="B">Red</button>
     </span>
-    <button class="tool" data-tool="cone">🔺 Cone</button>
-    <button class="tool" data-tool="arrow">↗ Arrow</button>
-    <button class="tool" data-tool="pen">✎ Pen</button>
-    <button class="tool" data-tool="text">T Text</button>
-    <button class="tool" data-tool="delete">🗑 Delete</button>
+    <button class="tool" data-tool="cone">Cone</button>
+    <button class="tool" data-tool="arrow">Arrow</button>
+    <button class="tool" data-tool="pen">Pen</button>
+    <button class="tool" data-tool="text">Text</button>
+    <button class="tool" data-tool="delete">Delete</button>
   </nav>
 
   <footer id="stepsbar">
@@ -69,7 +69,7 @@
         </select>
       </label>
       <label>Team A (blue) players <input id="setup-teamA" type="number" min="0" max="11" value="11"></label>
-      <label>Team B (orange) players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
+      <label>Team B (red) players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
       <p class="panel-note">Set both counts to 0 for an empty pitch. Changing the setup rebuilds the board.</p>
       <div class="panel-actions">
         <button id="setup-cancel" type="button">Cancel</button>

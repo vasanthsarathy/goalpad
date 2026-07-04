@@ -5,25 +5,25 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   overflow: hidden; touch-action: none;
   -webkit-user-select: none; user-select: none;
-  background: #1e232b; color: #f2f4f7;
+  background: #0f1216; color: #f2f4f7;
 }
 #topbar, #toolbar, #stepsbar {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; background: #2a303a; flex: 0 0 auto;
+  padding: 7px 12px; background: #12161b; flex: 0 0 auto;
 }
-#topbar { justify-content: space-between; }
-.brand { font-weight: 700; font-size: 18px; }
+#topbar { justify-content: space-between; border-bottom: 1px solid #222932; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: 0.3px; }
 .top-actions { display: flex; gap: 8px; }
 #stage { flex: 1 1 auto; min-height: 0; display: flex; }
-#board { width: 100%; height: 100%; display: block; background: #2f7a3f; }
-#toolbar { justify-content: center; flex-wrap: wrap; }
-#stepsbar { gap: 10px; }
+#board { width: 100%; height: 100%; display: block; background: #0f1216; }
+#toolbar { justify-content: center; flex-wrap: wrap; border-top: 1px solid #222932; }
+#stepsbar { gap: 10px; border-top: 1px solid #222932; }
 #scrub { flex: 1 1 auto; }
 button, .tool {
-  font-size: 16px; padding: 10px 14px; min-height: 44px;
-  border: none; border-radius: 8px; background: #3b4250; color: #f2f4f7;
+  font-size: 13px; padding: 8px 12px; min-height: 40px;
+  border: 1px solid #2a323d; border-radius: 2px; background: #1b212a; color: #f2f4f7;
 }
-.tool[aria-pressed="true"] { background: #2f6fed; }
+.tool[aria-pressed="true"] { background: #3a5fa0; border-color: #3a5fa0; }
 button:active { filter: brightness(1.2); }
 #step-label { min-width: 96px; text-align: center; font-variant-numeric: tabular-nums; }
 .panel {
@@ -32,7 +32,7 @@ button:active { filter: brightness(1.2); }
 }
 .panel[hidden] { display: none; }
 .panel-card {
-  background: #2a303a; padding: 20px; border-radius: 12px;
+  background: #12161b; padding: 20px; border: 1px solid #222932; border-radius: 3px;
   width: min(92vw, 380px); display: flex; flex-direction: column; gap: 12px;
 }
 .panel-card h2 { margin: 0 0 4px; }
@@ -44,18 +44,23 @@ button:active { filter: brightness(1.2); }
 .panel-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .saved-list { list-style: none; padding: 0; margin: 0; max-height: 40vh; overflow: auto; }
 .saved-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; }
-.import-label { display: inline-flex; align-items: center; padding: 10px 14px; min-height: 44px; background: #3b4250; border-radius: 8px; cursor: pointer; }
-.saved-list button { padding: 6px 10px; min-height: 36px; }
+.import-label { display: inline-flex; align-items: center; padding: 8px 12px; min-height: 40px; background: #1b212a; border: 1px solid #2a323d; border-radius: 2px; cursor: pointer; }
+.saved-list button { padding: 6px 10px; min-height: 40px; }
 .panel-card h3 { margin: 8px 0 0; }
 #board { touch-action: none; -webkit-tap-highlight-color: transparent; }
 .tool, button { -webkit-touch-callout: none; }
 @media (max-width: 640px) {
-  .brand { font-size: 16px; }
-  .tool { padding: 8px 10px; font-size: 14px; }
+  .brand { font-size: 14px; }
+  .tool { padding: 7px 9px; font-size: 12px; min-height: 40px; }
   #stepsbar { flex-wrap: wrap; }
 }
 #team-toggle { display: inline-flex; gap: 4px; margin: 0 4px; }
-.team { font-size: 14px; padding: 8px 10px; min-height: 44px; border: none; border-radius: 8px; background: #3b4250; color: #f2f4f7; opacity: 0.55; }
-.team[data-team="A"][aria-pressed="true"] { background: #2f6fed; opacity: 1; }
-.team[data-team="B"][aria-pressed="true"] { background: #e8552d; opacity: 1; }
+.team {
+  font-size: 13px; padding: 8px 10px; min-height: 40px;
+  border: 1px solid #2a323d; border-radius: 2px; background: #1b212a; color: #f2f4f7; opacity: 0.55;
+}
+.team[data-team="A"][aria-pressed="true"] { background: #4a6fa5; border-color: #4a6fa5; opacity: 1; }
+.team[data-team="B"][aria-pressed="true"] { background: #cf6b5a; border-color: #cf6b5a; opacity: 1; }
 #btn-del-step:disabled { opacity: 0.4; }
+#layer-tokens { filter: drop-shadow(0 2px 3px rgba(5,18,11,0.5)); }
+#scrub { accent-color: #4a6fa5; }
