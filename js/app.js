@@ -190,7 +190,7 @@ const steps = createStepController({ getScene: () => scene, applyPositions, onDo
 // ---- Frame ops (filmstrip) ----
 function addFrame() { dropSelection(); index = duplicateFrame(scene, index); render(); commit(); }
 function dupFrame(i) { dropSelection(); index = duplicateFrame(scene, i); render(); commit(); }
-function delFrame(i) { dropSelection(); if (deleteFrame(scene, i)) { index = Math.min(index, scene.frames.length - 1); render(); commit(); } }
+function delFrame(i) { dropSelection(); if (deleteFrame(scene, i)) { if (i < index) index -= 1; index = Math.min(index, scene.frames.length - 1); render(); commit(); } }
 
 document.getElementById('btn-play').addEventListener('click', () => { dropSelection(); steps.play(); });
 document.getElementById('btn-play-build').addEventListener('click', () => { dropSelection(); steps.play(); });
