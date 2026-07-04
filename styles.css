@@ -44,8 +44,8 @@ button:active { opacity: 0.6; }
 
 #text-colors { display: inline-flex; gap: 8px; align-items: center; padding: 0 4px; }
 #text-colors[hidden] { display: none; }
-.swatch { width: 20px; height: 20px; min-height: 20px; padding: 0; border-radius: 50%; border: 1px solid #eceef1; cursor: pointer; }
-.swatch[aria-pressed="true"] { outline: 2px solid #1b1f27; outline-offset: 1px; }
+.swatch { width: 40px; height: 40px; min-height: 40px; padding: 10px; border-radius: 50%; border: none; background-clip: content-box; cursor: pointer; }
+.swatch[aria-pressed="true"] { outline: 2px solid #1b1f27; outline-offset: -8px; }
 
 #btn-del-step:disabled { opacity: 0.35; }
 
