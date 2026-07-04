@@ -5,6 +5,7 @@ import { renderTokens, setTokenPositions } from './tokens.js';
 import { renderMarkup, initTools } from './tools.js';
 import { createStepController, activeMarkupIndex } from './steps.js';
 import { saveNamed, listSaved, loadNamed, deleteNamed, exportScene, importSceneFile } from './storage.js';
+import { LIBRARY } from './library.js';
 
 const board = document.getElementById('board');
 const layerField = document.getElementById('layer-field');
@@ -194,6 +195,52 @@ document.getElementById('import-file').addEventListener('change', (e) => {
     .catch(() => window.alert('Could not read that file.'));
   e.target.value = '';
 });
+
+// ---- Library ----
+const panelLibrary = document.getElementById('panel-library');
+const libTabs = document.getElementById('lib-tabs');
+const libList = document.getElementById('lib-list');
+let currentLibCat = 'tactics';
+
+function buildLibList() {
+  libList.replaceChildren();
+  const items = LIBRARY.filter((p) => p.category === currentLibCat);
+  const groups = [];
+  for (const p of items) if (!groups.includes(p.group)) groups.push(p.group);
+  for (const grp of groups) {
+    const label = document.createElement('div');
+    label.className = 'lib-group';
+    label.textContent = grp;
+    libList.appendChild(label);
+    for (const p of items.filter((x) => x.group === grp)) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'lib-row';
+      const nm = document.createElement('span');
+      nm.className = 'lib-nm';
+      nm.textContent = p.name;
+      const ds = document.createElement('span');
+      ds.className = 'lib-ds';
+      ds.textContent = p.description;
+      row.append(nm, ds);
+      row.addEventListener('click', () => {
+        loadScene(JSON.parse(JSON.stringify(p.scene)));
+        panelLibrary.hidden = true;
+      });
+      libList.appendChild(row);
+    }
+  }
+}
+
+libTabs.querySelectorAll('.lib-tab').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    currentLibCat = btn.dataset.cat;
+    libTabs.querySelectorAll('.lib-tab').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    buildLibList();
+  });
+});
+document.getElementById('btn-library').addEventListener('click', () => { buildLibList(); panelLibrary.hidden = false; });
+document.getElementById('library-close').addEventListener('click', () => { panelLibrary.hidden = true; });
 
 render();
 console.log('[goalpad] loaded');

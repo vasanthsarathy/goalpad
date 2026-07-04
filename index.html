@@ -13,6 +13,7 @@
   <header id="topbar">
     <span class="brand">goalpad</span>
     <div class="top-actions">
+      <button id="btn-library" type="button">Library</button>
       <button id="btn-setup" type="button">Setup</button>
       <button id="btn-saveload" type="button">Save / Load</button>
     </div>
@@ -101,6 +102,20 @@
       <ul id="saved-list" class="saved-list"></ul>
       <div class="panel-actions">
         <button id="saveload-close" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-library" class="panel" hidden>
+    <div class="panel-card">
+      <h2>Library</h2>
+      <div id="lib-tabs">
+        <button class="lib-tab" type="button" data-cat="tactics" aria-pressed="true">Tactics</button>
+        <button class="lib-tab" type="button" data-cat="drills">Drills</button>
+      </div>
+      <div id="lib-list"></div>
+      <div class="panel-actions">
+        <button id="library-close" type="button">Close</button>
       </div>
     </div>
   </div>
