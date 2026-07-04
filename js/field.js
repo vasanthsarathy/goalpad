@@ -2,7 +2,7 @@
 import { fieldViewBox } from './scene.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-const INK = '#1b1f27';
+const INK = '#0a0a0a';
 
 function el(name, attrs) {
   const n = document.createElementNS(SVGNS, name);
@@ -15,14 +15,13 @@ export function renderField(svg, layerEl, field) {
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   layerEl.replaceChildren();
 
-  // white ground (covers the pitch area; letterbox comes from #board CSS bg)
   layerEl.appendChild(el('rect', { x: 0, y: 0, width: w, height: h, fill: '#ffffff' }));
 
-  const g = el('g', { stroke: INK, 'stroke-width': '0.9', fill: 'none' });
+  const g = el('g', { stroke: INK, 'stroke-width': '1', fill: 'none' });
   g.appendChild(el('rect', { x: 6, y: 6, width: w - 12, height: h - 12 }));
 
   const centreR = Math.min(w, h) * 0.09;
-  const dot = (cx, cy) => el('circle', { cx, cy, r: 2.6, fill: INK, stroke: 'none' });
+  const dot = (cx, cy) => el('circle', { cx, cy, r: 2.5, fill: INK, stroke: 'none' });
 
   const boxDepth = Math.min(w * 0.16, 165);
   const penH = Math.min(h * 0.6, 403);

@@ -11,7 +11,7 @@
 </head>
 <body>
   <header id="topbar">
-    <span class="brand">goalpad</span>
+    <span class="brand">goalpad<span class="dot"></span></span>
     <div class="top-actions">
       <button id="btn-library" type="button">Library</button>
       <button id="btn-setup" type="button">Setup</button>
@@ -31,8 +31,8 @@
     <button class="tool" data-tool="select" aria-pressed="true">Select</button>
     <button class="tool" data-tool="add">Player</button>
     <span id="team-toggle">
-      <button class="team" data-team="A" aria-pressed="true">Blue</button>
-      <button class="team" data-team="B">Red</button>
+      <button class="team" data-team="A" aria-pressed="true">A</button>
+      <button class="team" data-team="B">B</button>
     </span>
     <button class="tool" data-tool="cone">Cone</button>
     <button class="tool" data-tool="arrow">Arrow</button>
@@ -40,14 +40,6 @@
     <button class="tool" data-tool="text">Text</button>
     <button class="tool" data-tool="delete">Delete</button>
   </nav>
-
-  <div id="text-colors" hidden>
-    <button class="swatch" type="button" data-color="#1b1f27" aria-pressed="true" style="background-color:#1b1f27" title="Ink"></button>
-    <button class="swatch" type="button" data-color="#4e74ae" style="background-color:#4e74ae" title="Blue"></button>
-    <button class="swatch" type="button" data-color="#c15f5b" style="background-color:#c15f5b" title="Red"></button>
-    <button class="swatch" type="button" data-color="#cb8a52" style="background-color:#cb8a52" title="Orange"></button>
-    <button class="swatch" type="button" data-color="#579870" style="background-color:#579870" title="Green"></button>
-  </div>
 
   <footer id="stepsbar">
     <button id="btn-step-prev" type="button">◀</button>

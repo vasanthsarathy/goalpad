@@ -16,7 +16,7 @@ function ensureMarker(layerEl) {
   if (layerEl.querySelector('#arrowhead')) return;
   const defs = document.createElementNS(SVGNS, 'defs');
   const marker = el('marker', { id: 'arrowhead', markerWidth: '8', markerHeight: '8', refX: '6', refY: '3', orient: 'auto', markerUnits: 'strokeWidth' });
-  marker.appendChild(el('path', { d: 'M0,0 L6,3 L0,6 Z', fill: '#579870' }));
+  marker.appendChild(el('path', { d: 'M0,0 L6,3 L0,6', fill: 'none', stroke: '#0a0a0a', 'stroke-width': '1.2', 'stroke-linecap': 'round' }));
   defs.appendChild(marker);
   layerEl.appendChild(defs);
 }
@@ -24,12 +24,12 @@ function ensureMarker(layerEl) {
 function drawOne(layerEl, a, index) {
   let node;
   if (a.type === 'arrow') {
-    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#579870', 'stroke-width': '4', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
+    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
   } else if (a.type === 'pen') {
     const d = a.points.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
-    node = el('path', { d, fill: 'none', stroke: '#579870', 'stroke-width': '4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    node = el('path', { d, fill: 'none', stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
   } else if (a.type === 'text') {
-    node = el('text', { x: a.x, y: a.y, fill: a.color || '#1b1f27', 'font-family': 'Space Grotesk, system-ui, sans-serif', 'font-size': '20', 'font-weight': '500', 'text-anchor': 'middle' });
+    node = el('text', { x: a.x, y: a.y, fill: '#0a0a0a', 'font-family': 'Jost, Space Grotesk, Futura, sans-serif', 'font-size': '20', 'font-weight': '500', 'text-anchor': 'middle' });
     node.textContent = a.text;
   }
   if (node) { node.dataset.annIndex = index; layerEl.appendChild(node); }
@@ -41,7 +41,7 @@ export function renderMarkup(layerEl, frame) {
   frame.markup.forEach((a, i) => drawOne(layerEl, a, i));
 }
 
-export function initTools(svg, markupLayer, { getScene, getFrame, getTool, getTeam, getTextColor, onSceneChange, onMarkupChange }) {
+export function initTools(svg, markupLayer, { getScene, getFrame, getTool, getTeam, onSceneChange, onMarkupChange }) {
   let draft = null;
 
   svg.addEventListener('pointerdown', (e) => {
@@ -73,7 +73,7 @@ export function initTools(svg, markupLayer, { getScene, getFrame, getTool, getTe
     else if (tool === 'pen') draft = { type: 'pen', points: [{ x: Math.round(x), y: Math.round(y) }] };
     else if (tool === 'text') {
       const text = window.prompt('Label text:');
-      if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text, color: getTextColor() }); onMarkupChange(); }
+      if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onMarkupChange(); }
     }
   });
 
