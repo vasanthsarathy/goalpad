@@ -114,8 +114,12 @@ export function listMine() {
 export function loadMine(id) {
   const str = localStorage.getItem(MINE_PREFIX + id);
   if (!str) return null;
-  const rec = JSON.parse(str);
-  return { id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, scene: deserialize(JSON.stringify(rec.scene)) };
+  try {
+    const rec = JSON.parse(str);
+    return { id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, scene: deserialize(JSON.stringify(rec.scene)) };
+  } catch {
+    return null;
+  }
 }
 
 export function deleteMine(id) { localStorage.removeItem(MINE_PREFIX + id); }
