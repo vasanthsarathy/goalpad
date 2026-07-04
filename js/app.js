@@ -1,4 +1,4 @@
-// app.js — shell (Home + Watch/Build + autosave) with the Build tool/selection model.
+// app.js — shell (Home + Watch/Build + autosave) with Build tools, selection, filmstrip, and undo/redo.
 import { createScene, duplicateFrame, deleteFrame, addPlayer, addCone, removePiece, pieceById } from './scene.js';
 import { renderField } from './field.js';
 import { renderTokens, setTokenPositions } from './tokens.js';
@@ -8,6 +8,8 @@ import { deserialize, exportScene, importSceneFile,
          newTactic, saveMine, listMine, loadMine, deleteMine, migrateLegacyPlays } from './storage.js';
 import { LIBRARY } from './library.js';
 import { renderHome } from './home.js';
+import { createHistory } from './history.js';
+import { renderFilmstrip } from './filmstrip.js';
 
 const homeEl = document.getElementById('home');
 const editorEl = document.getElementById('editor');
@@ -17,6 +19,9 @@ const layerField = document.getElementById('layer-field');
 const layerAnnotations = document.getElementById('layer-annotations');
 const layerTokens = document.getElementById('layer-tokens');
 const importInput = document.getElementById('import-file');
+const filmstripEl = document.getElementById('filmstrip');
+const btnUndo = document.getElementById('btn-undo');
+const btnRedo = document.getElementById('btn-redo');
 
 let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' });
 let index = 0;
@@ -25,6 +30,9 @@ let selected = null;   // null | {type:'piece',id} | {type:'ink',index}
 let selChip = null;
 let currentDocId = null;
 let currentName = 'Untitled';
+
+const clone = (s) => JSON.parse(JSON.stringify(s));
+const history = createHistory(clone);
 
 const frame = () => scene.frames[index];
 const mode = () => editorEl.dataset.mode;
@@ -42,26 +50,63 @@ function render() {
     getArmed: armedObj,
     selectedId: selected && selected.type === 'piece' ? selected.id : null,
     onSelect: selectPiece,
-    onChange: autosave,
-    onRemove: (id) => { removePiece(scene, id); clearSelection(); autosave(); },
+    onChange: commit,
+    onRemove: (id) => { removePiece(scene, id); clearSelection(); commit(); },
   });
   renderMarkup(layerAnnotations, frame(), selInkIndex());
   refreshScrubRange();
+  if (mode() === 'build') {
+    renderFilmstrip(filmstripEl, {
+      count: scene.frames.length,
+      current: index,
+      onJump: (i) => settleTo(i),
+      onAdd: addFrame,
+      onDuplicate: dupFrame,
+      onDelete: delFrame,
+    });
+  }
 }
 
-function autosave() {
+// ---- Persistence + undo history ----
+function persist() {
   if (!currentDocId) return;
   scene.name = currentName;
   saveMine({ id: currentDocId, name: currentName, scene, updatedAt: Date.now() });
 }
+function commit() { history.record(scene); refreshUndoUI(); persist(); }
+function refreshUndoUI() {
+  btnUndo.disabled = !history.canUndo();
+  btnRedo.disabled = !history.canRedo();
+}
+function undo() {
+  const s = history.undo(scene);
+  if (!s) return;
+  scene = s; index = Math.min(index, scene.frames.length - 1);
+  dropSelection(); render(); persist(); refreshUndoUI();
+}
+function redo() {
+  const s = history.redo(scene);
+  if (!s) return;
+  scene = s; index = Math.min(index, scene.frames.length - 1);
+  dropSelection(); render(); persist(); refreshUndoUI();
+}
+btnUndo.addEventListener('click', undo);
+btnRedo.addEventListener('click', redo);
+// two-finger tap → undo (Build only; best-effort)
+let twoFinger = false, tfStart = 0;
+board.addEventListener('touchstart', (e) => { twoFinger = e.touches.length === 2; tfStart = e.timeStamp; });
+board.addEventListener('touchend', (e) => {
+  if (twoFinger && e.touches.length === 0 && (e.timeStamp - tfStart) < 400 && mode() === 'build') undo();
+  twoFinger = false;
+});
 
 initTools(board, layerAnnotations, {
   getScene: () => scene,
   getFrame: () => frame(),
   getArmed: armedObj,
   getMode: mode,
-  onSceneChange: () => { render(); autosave(); },
-  onMarkupChange: () => { renderMarkup(layerAnnotations, frame(), selInkIndex()); autosave(); },
+  onSceneChange: () => { render(); commit(); },
+  onMarkupChange: () => { renderMarkup(layerAnnotations, frame(), selInkIndex()); commit(); },
   onSelectInk: (i) => selectInk(i),
   onDeselect: () => clearSelection(),
 });
@@ -116,22 +161,20 @@ function duplicatePiece(id) {
   const pos = frame().positions[id] || { x: 0, y: 0 };
   if (p.kind === 'player') addPlayer(scene, p.team, pos.x + 20, pos.y + 20);
   else if (p.kind === 'cone') addCone(scene, pos.x + 20, pos.y + 20);
-  render(); autosave(); openSelChipForPiece(id);
+  render(); commit(); openSelChipForPiece(id);
 }
-function deletePiece(id) { removePiece(scene, id); clearSelection(); autosave(); }
-function deleteInk(i) { frame().markup.splice(i, 1); clearSelection(); autosave(); }
+function deletePiece(id) { removePiece(scene, id); clearSelection(); commit(); }
+function deleteInk(i) { frame().markup.splice(i, 1); clearSelection(); commit(); }
 
-// ---- Steps / playback (unchanged from Stage 2) ----
+// ---- Steps / playback ----
 const scrub = document.getElementById('scrub');
 const stepLabel = document.getElementById('step-label');
-const btnDel = document.getElementById('btn-del-step');
 
 function updateStepLabel(pos) { stepLabel.textContent = `${Math.round(pos) + 1} / ${scene.frames.length}`; }
 function refreshScrubRange() {
   scrub.max = String(Math.max(0, scene.frames.length - 1));
   scrub.value = String(index);
   updateStepLabel(index);
-  btnDel.disabled = scene.frames.length <= 1;
 }
 function applyPositions(positionsMap, pos) {
   setTokenPositions(layerTokens, positionsMap);
@@ -144,9 +187,13 @@ function settleTo(i) { dropSelection(); index = Math.max(0, Math.min(scene.frame
 
 const steps = createStepController({ getScene: () => scene, applyPositions, onDone: (i) => settleTo(i) });
 
-document.getElementById('btn-add-step').addEventListener('click', () => { dropSelection(); index = duplicateFrame(scene, index); render(); autosave(); });
-btnDel.addEventListener('click', () => { dropSelection(); if (deleteFrame(scene, index)) { index = Math.min(index, scene.frames.length - 1); render(); autosave(); } });
+// ---- Frame ops (filmstrip) ----
+function addFrame() { dropSelection(); index = duplicateFrame(scene, index); render(); commit(); }
+function dupFrame(i) { dropSelection(); index = duplicateFrame(scene, i); render(); commit(); }
+function delFrame(i) { dropSelection(); if (deleteFrame(scene, i)) { index = Math.min(index, scene.frames.length - 1); render(); commit(); } }
+
 document.getElementById('btn-play').addEventListener('click', () => { dropSelection(); steps.play(); });
+document.getElementById('btn-play-build').addEventListener('click', () => { dropSelection(); steps.play(); });
 scrub.addEventListener('input', () => steps.scrubTo(Number(scrub.value)));
 scrub.addEventListener('change', () => settleTo(Number(scrub.value)));
 document.getElementById('btn-step-prev').addEventListener('click', () => { settleTo(index - 1); });
@@ -194,7 +241,7 @@ document.getElementById('setup-apply').addEventListener('click', () => {
     saveMine(t);
     enterEditor('build');
   } else {
-    dropSelection(); render(); autosave();
+    dropSelection(); render(); commit();
   }
 });
 
@@ -219,6 +266,7 @@ function showHome() {
 function enterEditor(m) {
   homeEl.hidden = true;
   editorEl.hidden = false;
+  history.reset(scene); refreshUndoUI();
   setMode(m);
 }
 
@@ -266,7 +314,7 @@ function renameCurrent() {
   if (!name) return;
   currentName = name; scene.name = name;
   docTitle.textContent = currentName + ' ✎';
-  autosave();
+  persist();
 }
 
 document.getElementById('btn-edit').addEventListener('click', onEdit);

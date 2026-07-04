@@ -34,10 +34,6 @@ export function deserialize(str) {
 
 // ---- Browser-only below ----
 
-export function saveNamed(name, scene) {
-  localStorage.setItem(KEY_PREFIX + name, serialize({ ...scene, name }));
-}
-
 export function listSaved() {
   const names = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -45,15 +41,6 @@ export function listSaved() {
     if (key && key.startsWith(KEY_PREFIX)) names.push(key.slice(KEY_PREFIX.length));
   }
   return names.sort();
-}
-
-export function loadNamed(name) {
-  const str = localStorage.getItem(KEY_PREFIX + name);
-  return str ? deserialize(str) : null;
-}
-
-export function deleteNamed(name) {
-  localStorage.removeItem(KEY_PREFIX + name);
 }
 
 export function exportScene(scene) {
