@@ -100,6 +100,13 @@ export function addCone(scene, x, y) {
   return id;
 }
 
+export function addBall(scene, x, y) {
+  if (scene.pieces.some((p) => p.kind === 'ball')) return null;
+  scene.pieces.push({ id: 'ball', kind: 'ball' });
+  for (const f of scene.frames) f.positions['ball'] = { x: Math.round(x), y: Math.round(y) };
+  return 'ball';
+}
+
 export function removePiece(scene, id) {
   scene.pieces = scene.pieces.filter(p => p.id !== id);
   for (const f of scene.frames) delete f.positions[id];
