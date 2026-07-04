@@ -24,10 +24,10 @@ function ensureMarker(layerEl) {
 function drawOne(layerEl, a, index) {
   let node;
   if (a.type === 'arrow') {
-    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#0a0a0a', 'stroke-width': '4', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
+    node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
   } else if (a.type === 'pen') {
     const d = a.points.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
-    node = el('path', { d, fill: 'none', stroke: '#0a0a0a', 'stroke-width': '4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    node = el('path', { d, fill: 'none', stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
   } else if (a.type === 'text') {
     node = el('text', { x: a.x, y: a.y, fill: '#0a0a0a', 'font-family': 'Jost, Space Grotesk, Futura, sans-serif', 'font-size': '20', 'font-weight': '500', 'text-anchor': 'middle' });
     node.textContent = a.text;
