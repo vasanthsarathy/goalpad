@@ -59,6 +59,7 @@ initTools(board, layerAnnotations, {
   getScene: () => scene,
   getFrame: () => frame(),
   getArmed: armedObj,
+  getMode: mode,
   onSceneChange: () => { render(); autosave(); },
   onMarkupChange: () => { renderMarkup(layerAnnotations, frame(), selInkIndex()); autosave(); },
   onSelectInk: (i) => selectInk(i),

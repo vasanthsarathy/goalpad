@@ -57,10 +57,11 @@ function placePiece(scene, kind, x, y) {
   else if (kind === 'ball') addBall(scene, x, y);
 }
 
-export function initTools(svg, markupLayer, { getScene, getFrame, getArmed, onSceneChange, onMarkupChange, onSelectInk, onDeselect }) {
+export function initTools(svg, markupLayer, { getScene, getFrame, getArmed, getMode, onSceneChange, onMarkupChange, onSelectInk, onDeselect }) {
   let draft = null;
 
   svg.addEventListener('pointerdown', (e) => {
+    if (getMode() !== 'build') return;
     const armed = getArmed();
     const { x, y } = clientToSvg(svg, e.clientX, e.clientY);
 
