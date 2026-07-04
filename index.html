@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f1216">
+  <meta name="theme-color" content="#ffffff">
   <title>goalpad</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header id="topbar">
-    <span class="brand">▦ goalpad</span>
+    <span class="brand">goalpad</span>
     <div class="top-actions">
       <button id="btn-setup" type="button">Setup</button>
       <button id="btn-saveload" type="button">Save / Load</button>
@@ -39,6 +39,14 @@
     <button class="tool" data-tool="text">Text</button>
     <button class="tool" data-tool="delete">Delete</button>
   </nav>
+
+  <div id="text-colors" hidden>
+    <button class="swatch" type="button" data-color="#1b1f27" aria-pressed="true" style="background:#1b1f27" title="Ink"></button>
+    <button class="swatch" type="button" data-color="#4e74ae" style="background:#4e74ae" title="Blue"></button>
+    <button class="swatch" type="button" data-color="#c15f5b" style="background:#c15f5b" title="Red"></button>
+    <button class="swatch" type="button" data-color="#cb8a52" style="background:#cb8a52" title="Orange"></button>
+    <button class="swatch" type="button" data-color="#579870" style="background:#579870" title="Green"></button>
+  </div>
 
   <footer id="stepsbar">
     <button id="btn-step-prev" type="button">◀</button>
