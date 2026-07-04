@@ -78,7 +78,8 @@ document.querySelectorAll('#toolbar .tool').forEach((b) => b.addEventListener('c
 // ---- Selection + contextual chip ----
 function selectPiece(id) { selected = { type: 'piece', id }; render(); openSelChipForPiece(id); }
 function selectInk(i) { selected = { type: 'ink', index: i }; render(); openSelChipForInk(i); }
-function clearSelection() { selected = null; closeSelChip(); render(); }
+function dropSelection() { selected = null; closeSelChip(); }
+function clearSelection() { dropSelection(); render(); }
 
 function openSelChipForPiece(id) {
   const p = pieceById(scene, id);
@@ -139,13 +140,13 @@ function applyPositions(positionsMap, pos) {
   scrub.value = String(pos);
   updateStepLabel(pos);
 }
-function settleTo(i) { index = Math.max(0, Math.min(scene.frames.length - 1, Math.round(i))); render(); }
+function settleTo(i) { dropSelection(); index = Math.max(0, Math.min(scene.frames.length - 1, Math.round(i))); render(); }
 
 const steps = createStepController({ getScene: () => scene, applyPositions, onDone: (i) => settleTo(i) });
 
-document.getElementById('btn-add-step').addEventListener('click', () => { index = duplicateFrame(scene, index); render(); autosave(); });
-btnDel.addEventListener('click', () => { if (deleteFrame(scene, index)) { index = Math.min(index, scene.frames.length - 1); render(); autosave(); } });
-document.getElementById('btn-play').addEventListener('click', () => steps.play());
+document.getElementById('btn-add-step').addEventListener('click', () => { dropSelection(); index = duplicateFrame(scene, index); render(); autosave(); });
+btnDel.addEventListener('click', () => { dropSelection(); if (deleteFrame(scene, index)) { index = Math.min(index, scene.frames.length - 1); render(); autosave(); } });
+document.getElementById('btn-play').addEventListener('click', () => { dropSelection(); steps.play(); });
 scrub.addEventListener('input', () => steps.scrubTo(Number(scrub.value)));
 scrub.addEventListener('change', () => settleTo(Number(scrub.value)));
 document.getElementById('btn-step-prev').addEventListener('click', () => { settleTo(index - 1); });
@@ -193,12 +194,13 @@ document.getElementById('setup-apply').addEventListener('click', () => {
     saveMine(t);
     enterEditor('build');
   } else {
-    render(); autosave();
+    dropSelection(); render(); autosave();
   }
 });
 
 // ---- Navigation / surfaces ----
 function showHome() {
+  dropSelection();
   editorEl.hidden = true;
   homeEl.hidden = false;
   renderHome(homeEl, {
