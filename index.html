@@ -32,17 +32,15 @@
     </main>
 
     <nav id="toolbar">
-      <button class="tool" data-tool="select" aria-pressed="true">Select</button>
-      <button class="tool" data-tool="add">Player</button>
-      <span id="team-toggle">
-        <button class="team" data-team="A" aria-pressed="true">A</button>
-        <button class="team" data-team="B">B</button>
-      </span>
-      <button class="tool" data-tool="cone">Cone</button>
-      <button class="tool" data-tool="arrow">Arrow</button>
-      <button class="tool" data-tool="pen">Pen</button>
-      <button class="tool" data-tool="text">Text</button>
-      <button class="tool" data-tool="delete">Delete</button>
+      <button class="chip" data-chip="A" type="button" aria-label="Team A player"><svg viewBox="-16 -16 32 32" width="24" height="24"><circle r="12" fill="#0a0a0a"></circle></svg></button>
+      <button class="chip" data-chip="B" type="button" aria-label="Team B player"><svg viewBox="-16 -16 32 32" width="24" height="24"><circle r="12" fill="#ffffff" stroke="#0a0a0a" stroke-width="1.5"></circle></svg></button>
+      <button class="chip" data-chip="ball" type="button" aria-label="Ball"><svg viewBox="-16 -16 32 32" width="24" height="24"><circle r="7" fill="#e10600"></circle></svg></button>
+      <button class="chip" data-chip="cone" type="button" aria-label="Cone"><svg viewBox="-16 -16 32 32" width="24" height="24"><path d="M0,-11 L-9,8 L9,8 Z" fill="none" stroke="#0a0a0a" stroke-width="1.5"></path></svg></button>
+      <span class="tool-divider"></span>
+      <button class="tool" data-ink="arrow" type="button">Arrow</button>
+      <button class="tool" data-ink="run" type="button">Run</button>
+      <button class="tool" data-ink="pen" type="button">Pen</button>
+      <button class="tool" data-ink="text" type="button">Text</button>
     </nav>
 
     <footer id="stepsbar">

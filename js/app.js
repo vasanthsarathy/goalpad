@@ -1,5 +1,5 @@
-// app.js — shell: Library home + Watch/Build editor modes + continuous autosave.
-import { createScene, duplicateFrame, deleteFrame } from './scene.js';
+// app.js — shell (Home + Watch/Build + autosave) with the Build tool/selection model.
+import { createScene, duplicateFrame, deleteFrame, addPlayer, addCone, removePiece, pieceById } from './scene.js';
 import { renderField } from './field.js';
 import { renderTokens, setTokenPositions } from './tokens.js';
 import { renderMarkup, initTools } from './tools.js';
@@ -20,50 +20,106 @@ const importInput = document.getElementById('import-file');
 
 let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' });
 let index = 0;
-let currentTool = 'select';
-let currentTeam = 'A';
-let currentDocId = null;   // Mine id, or null for a template preview
+let armed = null;      // null | 'chip:A|B|ball|cone' | 'ink:arrow|run|pen|text'
+let selected = null;   // null | {type:'piece',id} | {type:'ink',index}
+let selChip = null;
+let currentDocId = null;
 let currentName = 'Untitled';
 
 const frame = () => scene.frames[index];
+const mode = () => editorEl.dataset.mode;
+function armedObj() {
+  if (!armed) return null;
+  const [t, k] = armed.split(':');
+  return t === 'chip' ? { type: 'piece', kind: k } : { type: 'ink', tool: k };
+}
+const selInkIndex = () => (selected && selected.type === 'ink' ? selected.index : null);
 
 function render() {
   renderField(board, layerField, scene.field);
-  renderTokens(board, layerTokens, scene, frame(), () => currentTool, autosave);
-  renderMarkup(layerAnnotations, frame());
+  renderTokens(board, layerTokens, scene, frame(), {
+    getMode: mode,
+    getArmed: armedObj,
+    selectedId: selected && selected.type === 'piece' ? selected.id : null,
+    onSelect: selectPiece,
+    onChange: autosave,
+    onRemove: (id) => { removePiece(scene, id); clearSelection(); autosave(); },
+  });
+  renderMarkup(layerAnnotations, frame(), selInkIndex());
   refreshScrubRange();
 }
 
 function autosave() {
-  if (!currentDocId) return;          // template preview → nothing to save yet
+  if (!currentDocId) return;
   scene.name = currentName;
   saveMine({ id: currentDocId, name: currentName, scene, updatedAt: Date.now() });
 }
 
-// ---- Tools (bound once; live state via accessors) ----
 initTools(board, layerAnnotations, {
   getScene: () => scene,
   getFrame: () => frame(),
-  getTool: () => currentTool,
-  getTeam: () => currentTeam,
-  onSceneChange: () => { renderTokens(board, layerTokens, scene, frame(), () => currentTool, autosave); autosave(); },
-  onMarkupChange: () => { renderMarkup(layerAnnotations, frame()); autosave(); },
+  getArmed: armedObj,
+  onSceneChange: () => { render(); autosave(); },
+  onMarkupChange: () => { renderMarkup(layerAnnotations, frame(), selInkIndex()); autosave(); },
+  onSelectInk: (i) => selectInk(i),
+  onDeselect: () => clearSelection(),
 });
 
-document.querySelectorAll('.tool').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    currentTool = btn.dataset.tool;
-    document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-  });
-});
-document.querySelectorAll('.team').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    currentTeam = btn.dataset.team;
-    document.querySelectorAll('.team').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-  });
-});
+// ---- Toolbar: chips + ink (arm/disarm) ----
+function armClick(key) { armed = (armed === key) ? null : key; clearSelection(); refreshArmedUI(); }
+function refreshArmedUI() {
+  document.querySelectorAll('#toolbar .chip').forEach((b) => b.setAttribute('aria-pressed', String(armed === 'chip:' + b.dataset.chip)));
+  document.querySelectorAll('#toolbar .tool').forEach((b) => b.setAttribute('aria-pressed', String(armed === 'ink:' + b.dataset.ink)));
+}
+document.querySelectorAll('#toolbar .chip').forEach((b) => b.addEventListener('click', () => armClick('chip:' + b.dataset.chip)));
+document.querySelectorAll('#toolbar .tool').forEach((b) => b.addEventListener('click', () => armClick('ink:' + b.dataset.ink)));
 
-// ---- Steps / playback ----
+// ---- Selection + contextual chip ----
+function selectPiece(id) { selected = { type: 'piece', id }; render(); openSelChipForPiece(id); }
+function selectInk(i) { selected = { type: 'ink', index: i }; render(); openSelChipForInk(i); }
+function clearSelection() { selected = null; closeSelChip(); render(); }
+
+function openSelChipForPiece(id) {
+  const p = pieceById(scene, id);
+  const g = layerTokens.querySelector(`[data-token-id="${id}"]`);
+  if (!g) return;
+  const items = (p && p.kind === 'ball')
+    ? [['Delete', () => deletePiece(id)]]
+    : [['Duplicate', () => duplicatePiece(id)], ['Delete', () => deletePiece(id)]];
+  openSelChip(g, items);
+}
+function openSelChipForInk(i) {
+  const node = layerAnnotations.querySelector(`[data-ann-index="${i}"]`);
+  if (!node) return;
+  openSelChip(node, [['Delete', () => deleteInk(i)]]);
+}
+function openSelChip(anchorEl, items) {
+  closeSelChip();
+  selChip = document.createElement('div');
+  selChip.className = 'sel-chip';
+  for (const [label, fn] of items) {
+    const b = document.createElement('button'); b.className = 'sel-item'; b.type = 'button'; b.textContent = label;
+    b.addEventListener('click', fn);
+    selChip.append(b);
+  }
+  const r = anchorEl.getBoundingClientRect();
+  selChip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 168)) + 'px';
+  selChip.style.top = (r.bottom + 6) + 'px';
+  document.body.append(selChip);
+}
+function closeSelChip() { if (selChip) { selChip.remove(); selChip = null; } }
+
+function duplicatePiece(id) {
+  const p = pieceById(scene, id); if (!p) return;
+  const pos = frame().positions[id] || { x: 0, y: 0 };
+  if (p.kind === 'player') addPlayer(scene, p.team, pos.x + 20, pos.y + 20);
+  else if (p.kind === 'cone') addCone(scene, pos.x + 20, pos.y + 20);
+  render(); autosave(); openSelChipForPiece(id);
+}
+function deletePiece(id) { removePiece(scene, id); clearSelection(); autosave(); }
+function deleteInk(i) { frame().markup.splice(i, 1); clearSelection(); autosave(); }
+
+// ---- Steps / playback (unchanged from Stage 2) ----
 const scrub = document.getElementById('scrub');
 const stepLabel = document.getElementById('step-label');
 const btnDel = document.getElementById('btn-del-step');
@@ -101,10 +157,10 @@ const elHalf = document.getElementById('setup-half');
 const elTeamA = document.getElementById('setup-teamA');
 const elTeamB = document.getElementById('setup-teamB');
 const PRESET_COUNTS = { '11v11': 11, '9v9': 9, '7v7': 7 };
-let setupMode = 'new';   // 'new' | 'edit'
+let setupMode = 'new';
 
-function openSetup(mode) {
-  setupMode = mode;
+function openSetup(m) {
+  setupMode = m;
   elPreset.value = scene.field.preset;
   elHalf.value = scene.field.half;
   const custom = elPreset.value === 'custom';
@@ -157,26 +213,21 @@ function showHome() {
   });
 }
 
-function enterEditor(mode) {
+function enterEditor(m) {
   homeEl.hidden = true;
   editorEl.hidden = false;
-  setMode(mode);
+  setMode(m);
+}
+
+function setMode(m) {
+  editorEl.dataset.mode = m;
+  docTitle.textContent = currentName + (m === 'build' ? ' ✎' : '');
+  armed = null; selected = null; closeSelChip(); refreshArmedUI();
   render();
 }
 
-function setMode(mode) {
-  editorEl.dataset.mode = mode;
-  docTitle.textContent = currentName + (mode === 'build' ? ' ✎' : '');
-  if (mode === 'build') {
-    currentTool = 'select';
-    document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === 'select')));
-  } else {
-    currentTool = 'watch';   // non-'select' → piece dragging is disabled
-  }
-}
-
 function sceneOf(item) {
-  if (item.scene) return deserialize(JSON.stringify(item.scene)); // template
+  if (item.scene) return deserialize(JSON.stringify(item.scene));
   const t = loadMine(item.id);
   return t ? t.scene : null;
 }
@@ -200,7 +251,7 @@ function openCard(kind, item) {
   enterEditor('watch');
 }
 function onEdit() {
-  if (!currentDocId) {                       // fork the template preview
+  if (!currentDocId) {
     const t = newTactic(currentName + ' (copy)', scene);
     currentDocId = t.id; currentName = t.name;
     saveMine(t);
@@ -219,9 +270,9 @@ document.getElementById('btn-edit').addEventListener('click', onEdit);
 document.getElementById('btn-done').addEventListener('click', () => setMode('watch'));
 document.getElementById('btn-back').addEventListener('click', showHome);
 document.getElementById('btn-setup').addEventListener('click', () => openSetup('edit'));
-docTitle.addEventListener('click', () => { if (editorEl.dataset.mode === 'build') renameCurrent(); });
+docTitle.addEventListener('click', () => { if (mode() === 'build') renameCurrent(); });
 
-// ---- Card-menu actions (operate on Home items) ----
+// ---- Card-menu actions ----
 function renameTactic(item) {
   const name = (window.prompt('Rename tactic', item.name) || '').trim();
   if (!name) return;

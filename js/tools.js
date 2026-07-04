@@ -1,8 +1,7 @@
-// tools.js — DOM: markup rendering + tool input (add player/cone, draw markup, delete).
-// Markup shapes (in frame.markup): {type:'arrow',x1,y1,x2,y2} {type:'pen',points:[{x,y}]}
-//   {type:'text',x,y,text}
+// tools.js — DOM: markup rendering + the armed input model (stamp pieces / draw ink / select-deselect marks).
+// Markup: {type:'arrow',x1,y1,x2,y2} {type:'run',x1,y1,x2,y2} {type:'pen',points:[{x,y}]} {type:'text',x,y,text}
 import { clientToSvg } from './tokens.js';
-import { addPlayer, addCone, removePiece } from './scene.js';
+import { addPlayer, addCone, addBall } from './scene.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -23,8 +22,9 @@ function ensureMarker(layerEl) {
 
 function drawOne(layerEl, a, index) {
   let node;
-  if (a.type === 'arrow') {
+  if (a.type === 'arrow' || a.type === 'run') {
     node = el('line', { x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'marker-end': 'url(#arrowhead)' });
+    if (a.type === 'run') node.setAttribute('stroke-dasharray', '7 6');
   } else if (a.type === 'pen') {
     const d = a.points.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
     node = el('path', { d, fill: 'none', stroke: '#0a0a0a', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
@@ -35,63 +35,73 @@ function drawOne(layerEl, a, index) {
   if (node) { node.dataset.annIndex = index; layerEl.appendChild(node); }
 }
 
-export function renderMarkup(layerEl, frame) {
+export function renderMarkup(layerEl, frame, selectedIndex = null) {
   layerEl.replaceChildren();
   ensureMarker(layerEl);
   frame.markup.forEach((a, i) => drawOne(layerEl, a, i));
+  if (selectedIndex != null) {
+    const target = layerEl.querySelector(`[data-ann-index="${selectedIndex}"]`);
+    if (target) {
+      try {
+        const b = target.getBBox();
+        const pad = 6;
+        layerEl.appendChild(el('rect', { x: b.x - pad, y: b.y - pad, width: b.width + 2 * pad, height: b.height + 2 * pad, fill: 'none', stroke: '#0a0a0a', 'stroke-width': '1', 'stroke-dasharray': '4 4' }));
+      } catch { /* getBBox can throw on empty text; ignore */ }
+    }
+  }
 }
 
-export function initTools(svg, markupLayer, { getScene, getFrame, getTool, getTeam, onSceneChange, onMarkupChange }) {
+function placePiece(scene, kind, x, y) {
+  if (kind === 'A' || kind === 'B') addPlayer(scene, kind, x, y);
+  else if (kind === 'cone') addCone(scene, x, y);
+  else if (kind === 'ball') addBall(scene, x, y);
+}
+
+export function initTools(svg, markupLayer, { getScene, getFrame, getArmed, onSceneChange, onMarkupChange, onSelectInk, onDeselect }) {
   let draft = null;
 
   svg.addEventListener('pointerdown', (e) => {
-    const tool = getTool();
-    if (tool === 'select') return;
+    const armed = getArmed();
     const { x, y } = clientToSvg(svg, e.clientX, e.clientY);
 
-    if (tool === 'add') {
-      addPlayer(getScene(), getTeam(), x, y);
+    if (armed && armed.type === 'piece') {
+      placePiece(getScene(), armed.kind, x, y);
       onSceneChange();
       return;
     }
-    if (tool === 'cone') {
-      addCone(getScene(), x, y);
-      onSceneChange();
+    if (armed && armed.type === 'ink') {
+      const tool = armed.tool;
+      if (tool === 'text') {
+        const text = window.prompt('Label text:');
+        if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onMarkupChange(); }
+        return;
+      }
+      svg.setPointerCapture(e.pointerId);
+      if (tool === 'arrow') draft = { type: 'arrow', x1: x, y1: y, x2: x, y2: y };
+      else if (tool === 'run') draft = { type: 'run', x1: x, y1: y, x2: x, y2: y };
+      else if (tool === 'pen') draft = { type: 'pen', points: [{ x: Math.round(x), y: Math.round(y) }] };
       return;
     }
-    if (tool === 'delete') {
-      const t = e.target;
-      const tokenG = t.closest && t.closest('[data-token-id]');
-      const annEl = t.closest && t.closest('[data-ann-index]');
-      if (tokenG) { removePiece(getScene(), tokenG.dataset.tokenId); onSceneChange(); }
-      else if (annEl) { getFrame().markup.splice(Number(annEl.dataset.annIndex), 1); onMarkupChange(); }
-      return;
-    }
-    // markup tools capture the pointer on the svg
-    svg.setPointerCapture(e.pointerId);
-    if (tool === 'arrow') draft = { type: 'arrow', x1: x, y1: y, x2: x, y2: y };
-    else if (tool === 'pen') draft = { type: 'pen', points: [{ x: Math.round(x), y: Math.round(y) }] };
-    else if (tool === 'text') {
-      const text = window.prompt('Label text:');
-      if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onMarkupChange(); }
-    }
+    // neutral: select a tapped mark, else deselect
+    const annEl = e.target.closest && e.target.closest('[data-ann-index]');
+    if (annEl) onSelectInk(Number(annEl.dataset.annIndex));
+    else onDeselect();
   });
 
   svg.addEventListener('pointermove', (e) => {
     if (!draft) return;
     const { x, y } = clientToSvg(svg, e.clientX, e.clientY);
-    if (draft.type === 'arrow') { draft.x2 = x; draft.y2 = y; }
-    else if (draft.type === 'pen') draft.points.push({ x: Math.round(x), y: Math.round(y) });
-    // live preview: current frame markup + the draft
+    if (draft.type === 'pen') draft.points.push({ x: Math.round(x), y: Math.round(y) });
+    else { draft.x2 = x; draft.y2 = y; }
     renderMarkup(markupLayer, { markup: [...getFrame().markup, draft] });
   });
 
   const finish = (e) => {
     if (!draft) return;
     try { svg.releasePointerCapture(e.pointerId); } catch {}
-    if (draft.type === 'arrow') {
+    if (draft.type === 'arrow' || draft.type === 'run') {
       if (Math.hypot(draft.x2 - draft.x1, draft.y2 - draft.y1) > 5) {
-        getFrame().markup.push({ type: 'arrow', x1: Math.round(draft.x1), y1: Math.round(draft.y1), x2: Math.round(draft.x2), y2: Math.round(draft.y2) });
+        getFrame().markup.push({ type: draft.type, x1: Math.round(draft.x1), y1: Math.round(draft.y1), x2: Math.round(draft.x2), y2: Math.round(draft.y2) });
       }
     } else if (draft.type === 'pen' && draft.points.length > 1) {
       getFrame().markup.push(draft);
