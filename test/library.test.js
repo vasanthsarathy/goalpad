@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LIBRARY } from '../js/library.js';
 import { serialize, deserialize } from '../js/storage.js';
+import { fieldViewBox } from '../js/scene.js';
 
 test('every preset has required fields and a valid category', () => {
   for (const p of LIBRARY) {
@@ -37,4 +38,40 @@ test('every frame has a position for every piece', () => {
 test('library ships 9 tactics and 5 drills', () => {
   assert.equal(LIBRARY.filter((p) => p.category === 'tactics').length, 9);
   assert.equal(LIBRARY.filter((p) => p.category === 'drills').length, 5);
+});
+
+test('player pieces carry a team and number; all pieces have id and kind', () => {
+  for (const p of LIBRARY) {
+    for (const pc of p.scene.pieces) {
+      assert.ok(pc.id && pc.kind, `${p.id}: piece needs id+kind`);
+      if (pc.kind === 'player') {
+        assert.ok(pc.team === 'A' || pc.team === 'B', `${p.id}/${pc.id}: player team`);
+        assert.ok(Number.isInteger(pc.number), `${p.id}/${pc.id}: player number`);
+      }
+    }
+  }
+});
+
+test('markup shapes are well-formed', () => {
+  for (const p of LIBRARY) {
+    for (const f of p.scene.frames) {
+      for (const m of f.markup) {
+        if (m.type === 'arrow') assert.ok([m.x1, m.y1, m.x2, m.y2].every(Number.isFinite), `${p.id}: arrow coords`);
+        else if (m.type === 'pen') assert.ok(Array.isArray(m.points) && m.points.length > 1, `${p.id}: pen points`);
+        else if (m.type === 'text') assert.ok(typeof m.text === 'string' && Number.isFinite(m.x) && Number.isFinite(m.y), `${p.id}: text`);
+        else assert.fail(`${p.id}: unknown markup type ${m.type}`);
+      }
+    }
+  }
+});
+
+test('every position is within the pitch bounds', () => {
+  for (const p of LIBRARY) {
+    const { w, h } = fieldViewBox(p.scene.field);
+    for (const f of p.scene.frames) {
+      for (const [id, pos] of Object.entries(f.positions)) {
+        assert.ok(pos.x >= 0 && pos.x <= w && pos.y >= 0 && pos.y <= h, `${p.id}: ${id} off-pitch (${pos.x},${pos.y}) in ${w}x${h}`);
+      }
+    }
+  }
 });
