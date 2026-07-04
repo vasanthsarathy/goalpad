@@ -1,15 +1,13 @@
-// field.js — DOM: striped turf + pitch markings for full / left / right into a <g> layer.
+// field.js — DOM: white pitch with ink hairline markings.
 import { fieldViewBox } from './scene.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-const STRIPE_W = 105;               // viewBox units per mowing stripe
-const TURF_A = '#2f5f45';
-const TURF_B = '#2b5940';
+const INK = '#1b1f27';
 
 function el(name, attrs) {
-  const node = document.createElementNS(SVGNS, name);
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  return node;
+  const n = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
 }
 
 export function renderField(svg, layerEl, field) {
@@ -17,22 +15,14 @@ export function renderField(svg, layerEl, field) {
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   layerEl.replaceChildren();
 
-  // Striped turf (vertical mowing bands), drawn first.
-  const turf = el('g', {});
-  const n = Math.ceil(w / STRIPE_W);
-  for (let i = 0; i < n; i++) {
-    const x = i * STRIPE_W;
-    const sw = Math.min(STRIPE_W, w - x);
-    turf.appendChild(el('rect', { x, y: 0, width: sw, height: h, fill: i % 2 ? TURF_B : TURF_A }));
-  }
-  layerEl.appendChild(turf);
+  // white ground (covers the pitch area; letterbox comes from #board CSS bg)
+  layerEl.appendChild(el('rect', { x: 0, y: 0, width: w, height: h, fill: '#ffffff' }));
 
-  // Thin, crisp markings.
-  const g = el('g', { stroke: 'rgba(255,255,255,0.9)', 'stroke-width': '1.4', fill: 'none' });
+  const g = el('g', { stroke: INK, 'stroke-width': '0.9', fill: 'none' });
   g.appendChild(el('rect', { x: 6, y: 6, width: w - 12, height: h - 12 }));
 
   const centreR = Math.min(w, h) * 0.09;
-  const dot = (cx, cy) => el('circle', { cx, cy, r: 3, fill: 'rgba(255,255,255,0.9)', stroke: 'none' });
+  const dot = (cx, cy) => el('circle', { cx, cy, r: 2.6, fill: INK, stroke: 'none' });
 
   const boxDepth = Math.min(w * 0.16, 165);
   const penH = Math.min(h * 0.6, 403);

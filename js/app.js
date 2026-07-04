@@ -15,6 +15,7 @@ let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' })
 let index = 0;               // current frame index
 let currentTool = 'select';
 let currentTeam = 'A';
+let currentTextColor = '#1b1f27';
 
 const frame = () => scene.frames[index];
 
@@ -32,15 +33,24 @@ initTools(board, layerAnnotations, {
   getFrame: () => frame(),
   getTool: () => currentTool,
   getTeam: () => currentTeam,
+  getTextColor: () => currentTextColor,
   onSceneChange: () => { renderTokens(board, layerTokens, scene, frame(), () => currentTool, () => {}); },
   onMarkupChange: () => { renderMarkup(layerAnnotations, frame()); },
 });
 
 // Tool selection.
+const textColors = document.getElementById('text-colors');
 document.querySelectorAll('.tool').forEach((btn) => {
   btn.addEventListener('click', () => {
     currentTool = btn.dataset.tool;
     document.querySelectorAll('.tool').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    textColors.hidden = currentTool !== 'text';
+  });
+});
+textColors.querySelectorAll('.swatch').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    currentTextColor = btn.dataset.color;
+    textColors.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
   });
 });
 // Team toggle.
