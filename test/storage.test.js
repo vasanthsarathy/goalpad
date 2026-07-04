@@ -45,3 +45,36 @@ test('deserialize throws on a malformed frame', () => {
   // markup not an array
   assert.throws(() => deserialize(JSON.stringify({ ...base, frames: [{ positions: {}, markup: 'x' }] })));
 });
+
+// ---- Mine (saved tactics) + migration ----
+
+import { newTactic, validLegacyEntries } from '../js/storage.js';
+
+test('newTactic builds a record with id, name, synced scene.name, numeric updatedAt', () => {
+  const scene = createScene({ preset: '7v7', teamA: 7, teamB: 7, half: 'full' });
+  const t = newTactic('My Play', scene);
+  assert.equal(typeof t.id, 'string');
+  assert.ok(t.id.length > 0);
+  assert.equal(t.name, 'My Play');
+  assert.equal(t.scene.name, 'My Play');
+  assert.equal(typeof t.updatedAt, 'number');
+});
+
+test('newTactic defaults a blank name to Untitled', () => {
+  const scene = createScene({ preset: '7v7', teamA: 7, teamB: 7, half: 'full' });
+  assert.equal(newTactic('', scene).name, 'Untitled');
+  assert.equal(newTactic('   ', scene).name, 'Untitled');
+});
+
+test('validLegacyEntries keeps deserializable entries and skips the rest', () => {
+  const scene = createScene({ preset: '9v9', teamA: 9, teamB: 9, half: 'full' });
+  const entries = [
+    { name: 'good', str: serialize(scene) },
+    { name: 'bad', str: '{not valid json}' },
+    { name: 'legacy', str: JSON.stringify({ foo: 1 }) },
+  ];
+  const out = validLegacyEntries(entries);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].name, 'good');
+  assert.equal(out[0].scene.field.preset, '9v9');
+});

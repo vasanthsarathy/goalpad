@@ -70,3 +70,40 @@ button:active { opacity: 0.6; }
   .brand { font-size: 15px; }
   #toolbar { gap: 14px; }
 }
+
+/* ---- surfaces ---- */
+#home, #editor { flex: 1 1 auto; min-height: 0; }
+#home { display: flex; flex-direction: column; overflow-y: auto; }
+#editor { display: flex; flex-direction: column; }
+#home[hidden], #editor[hidden] { display: none; }
+
+/* ---- home ---- */
+.home-head { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #0a0a0a; }
+.home-actions { display: flex; gap: 22px; }
+.home-action { color: #0a0a0a; }
+.shelf { padding: 8px 16px 16px; }
+.shelf-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #949494; font-weight: 500; margin: 16px 0 8px; }
+.group-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #949494; font-weight: 500; margin: 12px 0 6px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.card { display: flex; align-items: flex-end; min-height: 68px; padding: 12px; border: 1px solid #0a0a0a; border-radius: 0; background: #ffffff; text-transform: none; letter-spacing: normal; }
+.card:active { background: #fafafa; }
+.card-name { font-size: 13px; font-weight: 400; color: #0a0a0a; text-align: left; }
+.empty { font-size: 14px; color: #949494; padding: 8px 0; }
+
+/* ---- card menu ---- */
+.card-menu { position: fixed; z-index: 20; background: #ffffff; border: 1px solid #0a0a0a; border-radius: 0; display: flex; flex-direction: column; min-width: 160px; }
+.menu-item { text-align: left; padding: 10px 14px; min-height: 40px; color: #0a0a0a; border-bottom: 1px solid #ececec; }
+.menu-item:last-child { border-bottom: none; }
+
+/* ---- editor contextual top bar ---- */
+.doc-title { flex: 1; text-align: center; font-size: 14px; color: #0a0a0a; text-transform: none; letter-spacing: normal; }
+#editor #topbar button { color: #0a0a0a; }
+#editor[data-mode="build"] .doc-title { cursor: pointer; }
+
+/* ---- watch/build show-hide ---- */
+#editor[data-mode="watch"] #toolbar { display: none; }
+#editor[data-mode="watch"] #btn-add-step,
+#editor[data-mode="watch"] #btn-del-step { display: none; }
+#editor[data-mode="watch"] #btn-setup,
+#editor[data-mode="watch"] #btn-done { display: none; }
+#editor[data-mode="build"] #btn-edit { display: none; }

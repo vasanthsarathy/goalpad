@@ -10,46 +10,51 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header id="topbar">
-    <span class="brand">goalpad<span class="dot"></span></span>
-    <div class="top-actions">
-      <button id="btn-library" type="button">Library</button>
-      <button id="btn-setup" type="button">Setup</button>
-      <button id="btn-saveload" type="button">Save / Load</button>
-    </div>
-  </header>
+  <div id="home"></div>
 
-  <main id="stage">
-    <svg id="board" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-      <g id="layer-field"></g>
-      <g id="layer-annotations"></g>
-      <g id="layer-tokens"></g>
-    </svg>
-  </main>
+  <div id="editor" hidden>
+    <header id="topbar">
+      <button id="btn-back" class="nav" type="button">‹ Library</button>
+      <span id="doc-title" class="doc-title"></span>
+      <div class="top-actions">
+        <button id="btn-edit" type="button">Edit</button>
+        <button id="btn-setup" type="button">Setup</button>
+        <button id="btn-done" type="button">Done</button>
+      </div>
+    </header>
 
-  <nav id="toolbar">
-    <button class="tool" data-tool="select" aria-pressed="true">Select</button>
-    <button class="tool" data-tool="add">Player</button>
-    <span id="team-toggle">
-      <button class="team" data-team="A" aria-pressed="true">A</button>
-      <button class="team" data-team="B">B</button>
-    </span>
-    <button class="tool" data-tool="cone">Cone</button>
-    <button class="tool" data-tool="arrow">Arrow</button>
-    <button class="tool" data-tool="pen">Pen</button>
-    <button class="tool" data-tool="text">Text</button>
-    <button class="tool" data-tool="delete">Delete</button>
-  </nav>
+    <main id="stage">
+      <svg id="board" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <g id="layer-field"></g>
+        <g id="layer-annotations"></g>
+        <g id="layer-tokens"></g>
+      </svg>
+    </main>
 
-  <footer id="stepsbar">
-    <button id="btn-step-prev" type="button">◀</button>
-    <input id="scrub" type="range" min="0" max="0" step="0.01" value="0">
-    <button id="btn-step-next" type="button">▶</button>
-    <span id="step-label">Step 1 / 1</span>
-    <button id="btn-add-step" type="button">+ Frame</button>
-    <button id="btn-del-step" type="button">🗑 Frame</button>
-    <button id="btn-play" type="button">▶ Play</button>
-  </footer>
+    <nav id="toolbar">
+      <button class="tool" data-tool="select" aria-pressed="true">Select</button>
+      <button class="tool" data-tool="add">Player</button>
+      <span id="team-toggle">
+        <button class="team" data-team="A" aria-pressed="true">A</button>
+        <button class="team" data-team="B">B</button>
+      </span>
+      <button class="tool" data-tool="cone">Cone</button>
+      <button class="tool" data-tool="arrow">Arrow</button>
+      <button class="tool" data-tool="pen">Pen</button>
+      <button class="tool" data-tool="text">Text</button>
+      <button class="tool" data-tool="delete">Delete</button>
+    </nav>
+
+    <footer id="stepsbar">
+      <button id="btn-step-prev" type="button">◀</button>
+      <input id="scrub" type="range" min="0" max="0" step="0.01" value="0">
+      <button id="btn-step-next" type="button">▶</button>
+      <span id="step-label">1 / 1</span>
+      <button id="btn-add-step" type="button">+ Frame</button>
+      <button id="btn-del-step" type="button">🗑 Frame</button>
+      <button id="btn-play" type="button">▶ Play</button>
+    </footer>
+  </div>
 
   <div id="panel-setup" class="panel" hidden>
     <div class="panel-card">
@@ -69,8 +74,8 @@
           <option value="right">Right half</option>
         </select>
       </label>
-      <label>Team A (blue) players <input id="setup-teamA" type="number" min="0" max="11" value="11"></label>
-      <label>Team B (red) players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
+      <label>Team A players <input id="setup-teamA" type="number" min="0" max="11" value="11"></label>
+      <label>Team B players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
       <p class="panel-note">Set both counts to 0 for an empty pitch. Changing the setup rebuilds the board.</p>
       <div class="panel-actions">
         <button id="setup-cancel" type="button">Cancel</button>
@@ -79,38 +84,7 @@
     </div>
   </div>
 
-  <div id="panel-saveload" class="panel" hidden>
-    <div class="panel-card">
-      <h2>Save / Load</h2>
-      <label>Name <input id="save-name" type="text" placeholder="e.g. Overlap right"></label>
-      <div class="panel-actions">
-        <button id="save-current" type="button">Save</button>
-        <button id="export-current" type="button">Export file</button>
-        <label class="import-label">Import file
-          <input id="import-file" type="file" accept="application/json" hidden>
-        </label>
-      </div>
-      <h3>Saved plays</h3>
-      <ul id="saved-list" class="saved-list"></ul>
-      <div class="panel-actions">
-        <button id="saveload-close" type="button">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="panel-library" class="panel" hidden>
-    <div class="panel-card">
-      <h2>Library</h2>
-      <div id="lib-tabs">
-        <button class="lib-tab" type="button" data-cat="tactics" aria-pressed="true">Tactics</button>
-        <button class="lib-tab" type="button" data-cat="drills">Drills</button>
-      </div>
-      <div id="lib-list"></div>
-      <div class="panel-actions">
-        <button id="library-close" type="button">Close</button>
-      </div>
-    </div>
-  </div>
+  <input id="import-file" type="file" accept="application/json" hidden>
 
   <script type="module" src="js/app.js"></script>
 </body>
