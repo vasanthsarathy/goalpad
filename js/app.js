@@ -64,6 +64,8 @@ function render() {
       onDuplicate: dupFrame,
       onDelete: delFrame,
     });
+  } else {
+    filmstripEl.replaceChildren();
   }
 }
 
@@ -106,7 +108,7 @@ initTools(board, layerAnnotations, {
   getArmed: armedObj,
   getMode: mode,
   onSceneChange: () => { render(); commit(); },
-  onMarkupChange: () => { renderMarkup(layerAnnotations, frame(), selInkIndex()); commit(); },
+  onMarkupChange: (added) => { renderMarkup(layerAnnotations, frame(), selInkIndex()); if (added) commit(); },
   onSelectInk: (i) => selectInk(i),
   onDeselect: () => clearSelection(),
 });
