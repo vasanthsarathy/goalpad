@@ -35,9 +35,9 @@ test('every frame has a position for every piece', () => {
   }
 });
 
-test('library ships 9 tactics and 5 drills', () => {
-  assert.equal(LIBRARY.filter((p) => p.category === 'tactics').length, 9);
-  assert.equal(LIBRARY.filter((p) => p.category === 'drills').length, 5);
+test('library ships 25 tactics and 19 drills (core + season)', () => {
+  assert.equal(LIBRARY.filter((p) => p.category === 'tactics').length, 25);
+  assert.equal(LIBRARY.filter((p) => p.category === 'drills').length, 19);
 });
 
 test('player pieces carry a team and number; all pieces have id and kind', () => {

@@ -1,5 +1,8 @@
 // library.js — PURE data: bundled read-only preset scenes (tactics & drills).
 // A preset's `scene` is a normal goalpad scene; loading copies it onto the board.
+// Season presets (cue-word tactics + 8-week drills) live in library-season.js.
+
+import { SEASON } from './library-season.js';
 
 export const LIBRARY = [
   {
@@ -348,4 +351,7 @@ export const LIBRARY = [
       ],
     },
   },
+
+  // Season presets appended below (see library-season.js).
+  ...SEASON,
 ];
