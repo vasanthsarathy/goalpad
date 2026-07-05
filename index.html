@@ -18,6 +18,8 @@
       <span id="doc-title" class="doc-title"></span>
       <div class="top-actions">
         <button id="btn-edit" type="button">Edit</button>
+        <button id="btn-undo" type="button" aria-label="Undo">↶</button>
+        <button id="btn-redo" type="button" aria-label="Redo">↷</button>
         <button id="btn-setup" type="button">Setup</button>
         <button id="btn-done" type="button">Done</button>
       </div>
@@ -48,9 +50,11 @@
       <input id="scrub" type="range" min="0" max="0" step="0.01" value="0">
       <button id="btn-step-next" type="button">▶</button>
       <span id="step-label">1 / 1</span>
-      <button id="btn-add-step" type="button">+ Frame</button>
-      <button id="btn-del-step" type="button">🗑 Frame</button>
       <button id="btn-play" type="button">▶ Play</button>
+    </footer>
+    <footer id="filmbar">
+      <div id="filmstrip"></div>
+      <button id="btn-play-build" type="button">▶ Play</button>
     </footer>
   </div>
 

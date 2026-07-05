@@ -74,7 +74,7 @@ export function initTools(svg, markupLayer, { getScene, getFrame, getArmed, getM
       const tool = armed.tool;
       if (tool === 'text') {
         const text = window.prompt('Label text:');
-        if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onMarkupChange(); }
+        if (text) { getFrame().markup.push({ type: 'text', x: Math.round(x), y: Math.round(y), text }); onMarkupChange(true); }
         return;
       }
       svg.setPointerCapture(e.pointerId);
@@ -100,15 +100,18 @@ export function initTools(svg, markupLayer, { getScene, getFrame, getArmed, getM
   const finish = (e) => {
     if (!draft) return;
     try { svg.releasePointerCapture(e.pointerId); } catch {}
+    let added = false;
     if (draft.type === 'arrow' || draft.type === 'run') {
       if (Math.hypot(draft.x2 - draft.x1, draft.y2 - draft.y1) > 5) {
         getFrame().markup.push({ type: draft.type, x1: Math.round(draft.x1), y1: Math.round(draft.y1), x2: Math.round(draft.x2), y2: Math.round(draft.y2) });
+        added = true;
       }
     } else if (draft.type === 'pen' && draft.points.length > 1) {
       getFrame().markup.push(draft);
+      added = true;
     }
     draft = null;
-    onMarkupChange();
+    onMarkupChange(added);
   };
   svg.addEventListener('pointerup', finish);
   svg.addEventListener('pointercancel', finish);
