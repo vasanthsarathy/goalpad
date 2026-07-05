@@ -1,4 +1,7 @@
-// home.js — DOM: the Library home surface (Templates + Mine cards) with a long-press card menu.
+// home.js — DOM: the Library browser (search + tag chips + Tactics/Drills/Mine icon rows).
+import { deriveTags } from './library.js';
+import { filterLibrary } from './storage.js';
+
 const LONG_PRESS_MS = 450;
 
 function el(tag, cls, text) {
@@ -8,73 +11,94 @@ function el(tag, cls, text) {
   return n;
 }
 
-export function renderHome(root, cbs) {
-  const { templates, mine, onOpen, onNew, onImport, onRename, onDuplicate, onExport, onDelete, onClose } = cbs;
+export function renderLibrary(root, cbs) {
+  const { library, mine, onOpen, onNew, onImport, onClose, onRename, onDuplicate, onExport, onDelete, onEditTags } = cbs;
   closeMenu();
+
+  const items = [
+    ...library.map((t) => ({ kind: 'template', ref: t, name: t.name, description: t.description, tags: deriveTags(t), category: t.category, group: t.group })),
+    ...mine.map((m) => ({ kind: 'mine', ref: m, name: m.name, description: '', tags: m.tags || [], category: 'mine', group: 'Mine' })),
+  ];
+  const allTags = [...new Set(items.flatMap((i) => i.tags))].sort();
+  let query = '';
+  const active = new Set();
+
   root.replaceChildren();
 
-  // header: wordmark + New / Import
+  // header: wordmark + New / Import / Close
   const head = el('div', 'home-head');
-  const brand = el('span', 'brand');
-  brand.append(document.createTextNode('goalpad'), el('span', 'dot'));
+  const brand = el('span', 'brand'); brand.append(document.createTextNode('goalpad'), el('span', 'dot'));
   const actions = el('div', 'home-actions');
-  const newBtn = el('button', 'home-action', 'New'); newBtn.type = 'button';
-  newBtn.addEventListener('click', () => onNew());
-  const importBtn = el('button', 'home-action', 'Import'); importBtn.type = 'button';
-  importBtn.addEventListener('click', () => onImport());
-  const closeBtn = el('button', 'home-action', 'Close'); closeBtn.type = 'button';
-  closeBtn.addEventListener('click', () => onClose());
-  actions.append(newBtn, importBtn, closeBtn);
+  for (const [label, fn] of [['New', onNew], ['Import', onImport], ['Close', onClose]]) {
+    const b = el('button', 'home-action', label); b.type = 'button'; b.addEventListener('click', () => fn());
+    actions.append(b);
+  }
   head.append(brand, actions);
   root.append(head);
 
-  // Templates shelf, grouped
-  const tShelf = el('div', 'shelf');
-  tShelf.append(el('div', 'shelf-label', 'Templates'));
-  const groups = [];
-  for (const t of templates) if (!groups.includes(t.group)) groups.push(t.group);
-  for (const g of groups) {
-    tShelf.append(el('div', 'group-label', g));
-    const grid = el('div', 'card-grid');
-    for (const t of templates.filter((x) => x.group === g)) {
-      grid.append(card(t.name, () => onOpen('template', t),
-        (anchor) => openMenu(anchor, [['Duplicate', () => onDuplicate(t)], ['Export', () => onExport(t)]])));
-    }
-    tShelf.append(grid);
-  }
-  root.append(tShelf);
+  // search
+  const search = el('input', 'lib-search'); search.type = 'search'; search.placeholder = 'Search tactics, drills, tags…';
+  search.addEventListener('input', () => { query = search.value; renderResults(); });
+  root.append(search);
 
-  // Mine shelf
-  const mShelf = el('div', 'shelf');
-  mShelf.append(el('div', 'shelf-label', 'Mine'));
-  if (!mine.length) {
-    mShelf.append(el('div', 'empty', 'No saved tactics yet — tap New'));
-  } else {
-    const grid = el('div', 'card-grid');
-    for (const m of mine) {
-      grid.append(card(m.name, () => onOpen('mine', m),
-        (anchor) => openMenu(anchor, [
-          ['Rename', () => onRename(m)], ['Duplicate', () => onDuplicate(m)],
-          ['Export', () => onExport(m)], ['Delete', () => onDelete(m)],
-        ])));
-    }
-    mShelf.append(grid);
+  // tag chips
+  const chipRow = el('div', 'lib-chips');
+  for (const tag of allTags) {
+    const c = el('button', 'lib-chip', tag); c.type = 'button'; c.setAttribute('aria-pressed', 'false');
+    c.addEventListener('click', () => {
+      if (active.has(tag)) active.delete(tag); else active.add(tag);
+      c.setAttribute('aria-pressed', String(active.has(tag)));
+      renderResults();
+    });
+    chipRow.append(c);
   }
-  root.append(mShelf);
+  root.append(chipRow);
+
+  // results
+  const results = el('div', 'lib-results');
+  root.append(results);
+
+  const sectionOf = (i) => (i.kind === 'mine' ? 'MINE' : (i.category === 'drills' ? 'DRILLS' : 'TACTICS'));
+  const iconOf = (i) => (i.kind === 'mine' ? '★' : (i.category === 'drills' ? '△' : '↗'));
+
+  function rowFor(item) {
+    const b = el('button', 'lib-row'); b.type = 'button';
+    b.append(el('span', 'lib-icon', iconOf(item)), el('span', 'lib-nm', item.name), el('span', 'lib-tags', item.tags.join(' · ')));
+    const menuItems = item.kind === 'mine'
+      ? [['Rename', () => onRename(item.ref)], ['Tags', () => onEditTags(item.ref)], ['Duplicate', () => onDuplicate(item.ref)], ['Export', () => onExport(item.ref)], ['Delete', () => onDelete(item.ref)]]
+      : [['Duplicate', () => onDuplicate(item.ref)], ['Export', () => onExport(item.ref)]];
+    wireRow(b, () => onOpen(item.kind, item.ref), (anchor) => openMenu(anchor, menuItems));
+    return b;
+  }
+
+  function renderResults() {
+    const filtered = filterLibrary(items, { query, tags: [...active] });
+    results.replaceChildren();
+    for (const section of ['TACTICS', 'DRILLS', 'MINE']) {
+      const secItems = filtered.filter((i) => sectionOf(i) === section);
+      if (!secItems.length) continue;
+      results.append(el('div', 'lib-section', section));
+      const groups = [];
+      for (const i of secItems) if (!groups.includes(i.group)) groups.push(i.group);
+      for (const g of groups) {
+        if (section !== 'MINE') results.append(el('div', 'lib-group', g));
+        for (const item of secItems.filter((x) => x.group === g)) results.append(rowFor(item));
+      }
+    }
+    if (!filtered.length) results.append(el('div', 'empty', 'No matches'));
+  }
+
+  renderResults();
 }
 
-function card(name, onTap, onLong) {
-  const b = el('button', 'card'); b.type = 'button';
-  b.append(el('span', 'card-name', name));
+function wireRow(b, onTap, onLong) {
   let timer = null, longFired = false;
-  const start = () => { longFired = false; timer = setTimeout(() => { longFired = true; onLong(b); }, LONG_PRESS_MS); };
+  b.addEventListener('pointerdown', () => { longFired = false; timer = setTimeout(() => { longFired = true; onLong(b); }, LONG_PRESS_MS); });
   const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
-  b.addEventListener('pointerdown', start);
   b.addEventListener('pointerup', cancel);
   b.addEventListener('pointerleave', cancel);
   b.addEventListener('pointercancel', cancel);
   b.addEventListener('click', () => { if (!longFired) onTap(); });
-  return b;
 }
 
 let menuEl = null;

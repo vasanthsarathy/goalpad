@@ -6,9 +6,9 @@ import { renderMarkup, initTools } from './tools.js';
 import { createStepController, activeMarkupIndex } from './steps.js';
 import { deserialize, exportScene, importSceneFile,
          newTactic, saveMine, listMine, loadMine, deleteMine, migrateLegacyPlays,
-         loadScratch, saveScratch } from './storage.js';
+         loadScratch, saveScratch, normalizeTags } from './storage.js';
 import { LIBRARY } from './library.js';
-import { renderHome } from './home.js';
+import { renderLibrary } from './home.js';
 import { createHistory } from './history.js';
 import { renderFilmstrip } from './filmstrip.js';
 
@@ -261,17 +261,18 @@ function showLibrary() {
   dropSelection();
   editorEl.hidden = true;
   homeEl.hidden = false;
-  renderHome(homeEl, {
-    templates: LIBRARY,
+  renderLibrary(homeEl, {
+    library: LIBRARY,
     mine: listMine(),
     onOpen: openCard,
     onNew: startNew,
     onImport: () => importInput.click(),
+    onClose: closeLibrary,
     onRename: renameTactic,
     onDuplicate: duplicateTactic,
     onExport: exportTactic,
     onDelete: deleteTactic,
-    onClose: closeLibrary,
+    onEditTags: editTags,
   });
 }
 function closeLibrary() { homeEl.hidden = true; editorEl.hidden = false; }
@@ -328,7 +329,8 @@ function saveToLibrary() {
   const seed = currentName === 'Scratchpad' ? '' : currentName;
   const name = (window.prompt('Save to Library as…', seed) || '').trim();
   if (!name) return;
-  saveMine(newTactic(name, clone(scene)));
+  const tags = normalizeTags(window.prompt('Tags (comma-separated, optional)', '') || '');
+  saveMine(newTactic(name, clone(scene), tags));
   window.alert(`Saved “${name}” to your Library.`);
 }
 
@@ -353,7 +355,15 @@ function renameTactic(item) {
 }
 function duplicateTactic(item) {
   const s = sceneOf(item); if (!s) return;
-  saveMine(newTactic((item.name || 'Untitled') + ' (copy)', s));
+  saveMine(newTactic((item.name || 'Untitled') + ' (copy)', s, item.tags || []));
+  showLibrary();
+}
+function editTags(item) {
+  const input = window.prompt('Tags (comma-separated)', (item.tags || []).join(', '));
+  if (input === null) return;
+  const t = loadMine(item.id); if (!t) return;
+  t.tags = normalizeTags(input); t.updatedAt = Date.now();
+  saveMine(t);
   showLibrary();
 }
 function exportTactic(item) {

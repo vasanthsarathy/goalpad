@@ -122,3 +122,16 @@ button:active { opacity: 0.6; }
 .help-body h3 { margin: 16px 0 4px; font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #0a0a0a; }
 .help-body p { margin: 0; font-size: 14px; line-height: 1.5; color: #0a0a0a; }
 .help-body b { font-weight: 500; }
+
+/* ---- Library browser (Part B) ---- */
+.lib-search { margin: 8px 16px 4px; padding: 10px; border: 1px solid #0a0a0a; border-radius: 0; font-family: inherit; font-size: 14px; background: #fff; color: #0a0a0a; }
+.lib-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+.lib-chip { font-size: 12px; letter-spacing: 0.02em; text-transform: none; color: #949494; padding: 6px 10px; min-height: 32px; border: 1px solid #ececec; background: #fff; border-radius: 0; }
+.lib-chip[aria-pressed="true"] { color: #0a0a0a; border-color: #0a0a0a; }
+.lib-results { padding: 0 16px 24px; }
+.lib-section { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #0a0a0a; font-weight: 500; margin: 18px 0 6px; border-bottom: 1px solid #0a0a0a; padding-bottom: 4px; }
+.lib-group { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #949494; margin: 10px 0 2px; }
+.lib-row { display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left; padding: 8px 2px; min-height: 40px; border: none; border-bottom: 1px solid #f0f0f0; background: none; text-transform: none; letter-spacing: normal; }
+.lib-icon { width: 16px; flex: 0 0 auto; color: #0a0a0a; font-size: 14px; }
+.lib-nm { font-size: 14px; color: #0a0a0a; }
+.lib-tags { font-size: 11px; color: #949494; margin-left: auto; text-align: right; }
