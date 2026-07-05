@@ -336,7 +336,28 @@ function saveToLibrary() {
 
 document.getElementById('btn-home').addEventListener('click', openScratch);
 document.getElementById('btn-library').addEventListener('click', showLibrary);
-document.getElementById('btn-help').addEventListener('click', () => { document.getElementById('panel-help').hidden = false; });
+function openHelp() { document.getElementById('panel-help').hidden = false; }
+document.getElementById('btn-help').addEventListener('click', openHelp);
+
+let moreMenu = null;
+function closeMoreMenu() { if (moreMenu) { moreMenu.remove(); moreMenu = null; document.removeEventListener('pointerdown', moreOutside, true); } }
+function moreOutside(e) { if (moreMenu && !moreMenu.contains(e.target) && e.target.id !== 'btn-more') closeMoreMenu(); }
+function openMoreMenu(anchor) {
+  closeMoreMenu();
+  moreMenu = document.createElement('div');
+  moreMenu.className = 'card-menu';
+  for (const [label, fn] of [['Help', openHelp], ['Setup', () => openSetup('edit')], ['Save', saveToLibrary]]) {
+    const b = document.createElement('button'); b.className = 'menu-item'; b.type = 'button'; b.textContent = label;
+    b.addEventListener('click', () => { closeMoreMenu(); fn(); });
+    moreMenu.append(b);
+  }
+  const r = anchor.getBoundingClientRect();
+  moreMenu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 168)) + 'px';
+  moreMenu.style.top = (r.bottom + 4) + 'px';
+  document.body.append(moreMenu);
+  setTimeout(() => document.addEventListener('pointerdown', moreOutside, true), 0);
+}
+document.getElementById('btn-more').addEventListener('click', (e) => openMoreMenu(e.currentTarget));
 document.getElementById('help-close').addEventListener('click', () => { document.getElementById('panel-help').hidden = true; });
 document.getElementById('btn-edit').addEventListener('click', onEdit);
 document.getElementById('btn-done').addEventListener('click', () => setMode('watch'));
