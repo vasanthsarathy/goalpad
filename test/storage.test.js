@@ -48,7 +48,7 @@ test('deserialize throws on a malformed frame', () => {
 
 // ---- Mine (saved tactics) + migration ----
 
-import { newTactic, validLegacyEntries } from '../js/storage.js';
+import { newTactic, validLegacyEntries, normalizeTags, filterLibrary } from '../js/storage.js';
 
 test('newTactic builds a record with id, name, synced scene.name, numeric updatedAt', () => {
   const scene = createScene({ preset: '7v7', teamA: 7, teamB: 7, half: 'full' });
@@ -77,4 +77,37 @@ test('validLegacyEntries keeps deserializable entries and skips the rest', () =>
   assert.equal(out.length, 1);
   assert.equal(out[0].name, 'good');
   assert.equal(out[0].scene.field.preset, '9v9');
+});
+
+test('normalizeTags trims, lowercases, dedupes, drops empties', () => {
+  assert.deepEqual(normalizeTags('Corner, 2v1 , corner,, Attack'), ['corner', '2v1', 'attack']);
+  assert.deepEqual(normalizeTags(''), []);
+  assert.deepEqual(normalizeTags(null), []);
+});
+
+test('filterLibrary: query matches name, description, or tags', () => {
+  const items = [
+    { name: '2v1 attack', description: '', tags: ['2v1', 'attack'] },
+    { name: 'Rondo', description: 'keep ball', tags: ['possession'] },
+  ];
+  assert.equal(filterLibrary(items, { query: '2v1' }).length, 1);
+  assert.equal(filterLibrary(items, { query: 'keep' }).length, 1);
+  assert.equal(filterLibrary(items, { query: 'possession' }).length, 1);
+  assert.equal(filterLibrary(items, {}).length, 2);
+});
+
+test('filterLibrary: tag chips filter with AND', () => {
+  const items = [
+    { name: 'a', tags: ['corner', 'attack'] },
+    { name: 'b', tags: ['corner'] },
+    { name: 'c', tags: ['attack'] },
+  ];
+  assert.equal(filterLibrary(items, { tags: ['corner'] }).length, 2);
+  assert.equal(filterLibrary(items, { tags: ['corner', 'attack'] }).length, 1);
+});
+
+test('newTactic carries a tags array (default empty)', () => {
+  const scene = createScene({ preset: '7v7', teamA: 1, teamB: 1, half: 'full' });
+  assert.deepEqual(newTactic('x', scene).tags, []);
+  assert.deepEqual(newTactic('x', scene, ['a', 'b']).tags, ['a', 'b']);
 });

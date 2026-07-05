@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LIBRARY } from '../js/library.js';
+import { LIBRARY, deriveTags } from '../js/library.js';
 import { serialize, deserialize } from '../js/storage.js';
 import { fieldViewBox } from '../js/scene.js';
 
@@ -74,4 +74,20 @@ test('every position is within the pitch bounds', () => {
       }
     }
   }
+});
+
+test('deriveTags returns a non-empty string array for every preset', () => {
+  for (const p of LIBRARY) {
+    const t = deriveTags(p);
+    assert.ok(Array.isArray(t) && t.length > 0, `${p.id} has tags`);
+    assert.ok(t.every((x) => typeof x === 'string'), `${p.id} tag types`);
+  }
+});
+
+test('deriveTags picks situational labels from name/group', () => {
+  const twoVone = LIBRARY.find((p) => p.id === 'tac-2v1');
+  assert.ok(deriveTags(twoVone).includes('2v1'), '2v1');
+  assert.ok(deriveTags(twoVone).includes('attack'), 'attack');
+  const corner = LIBRARY.find((p) => p.id === 'tac-corner');
+  assert.ok(deriveTags(corner).includes('corner'), 'corner');
 });
