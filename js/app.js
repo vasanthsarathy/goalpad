@@ -202,11 +202,17 @@ let setupMode = 'new';
 
 function openSetup(m) {
   setupMode = m;
-  elPreset.value = scene.field.preset;
-  elHalf.value = scene.field.half;
-  const custom = elPreset.value === 'custom';
-  if (!custom) { elTeamA.value = elTeamB.value = PRESET_COUNTS[scene.field.preset]; }
-  elTeamA.disabled = elTeamB.disabled = !custom;
+  if (m === 'new') {
+    elPreset.value = '11v11'; elHalf.value = 'full';
+    elTeamA.value = elTeamB.value = 11;
+    elTeamA.disabled = elTeamB.disabled = true;
+  } else {
+    elPreset.value = scene.field.preset;
+    elHalf.value = scene.field.half;
+    const custom = elPreset.value === 'custom';
+    if (!custom) { elTeamA.value = elTeamB.value = PRESET_COUNTS[scene.field.preset]; }
+    elTeamA.disabled = elTeamB.disabled = !custom;
+  }
   panelSetup.hidden = false;
 }
 elPreset.addEventListener('change', () => {
@@ -228,7 +234,7 @@ document.getElementById('setup-apply').addEventListener('click', () => {
   index = 0;
   panelSetup.hidden = true;
   if (setupMode === 'new') {
-    const t = newTactic(currentName, scene);
+    const t = newTactic('Untitled', scene);
     currentDocId = t.id; currentName = t.name;
     saveMine(t);
     enterEditor('build');
@@ -290,11 +296,7 @@ function sceneOf(item) {
 }
 
 // ---- Flows ----
-function startNew() {
-  currentDocId = null; currentName = 'Untitled';
-  scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' }); index = 0;
-  openSetup('new');
-}
+function startNew() { openSetup('new'); }
 function openCard(kind, item) {
   if (kind === 'template') {
     scene = deserialize(JSON.stringify(item.scene));
@@ -338,7 +340,7 @@ document.getElementById('btn-edit').addEventListener('click', onEdit);
 document.getElementById('btn-done').addEventListener('click', () => setMode('watch'));
 document.getElementById('btn-setup').addEventListener('click', () => openSetup('edit'));
 document.getElementById('btn-save').addEventListener('click', saveToLibrary);
-docTitle.addEventListener('click', () => { if (mode() === 'build') renameCurrent(); });
+docTitle.addEventListener('click', () => { if (mode() === 'build' && currentDocId !== 'scratch') renameCurrent(); });
 
 // ---- Card-menu actions ----
 function renameTactic(item) {
