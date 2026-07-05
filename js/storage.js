@@ -124,3 +124,16 @@ export function migrateLegacyPlays() {
   localStorage.setItem(MIGRATED_FLAG, '1');
   return valid.length;
 }
+
+// ---- Scratchpad (the home board) ----
+const SCRATCH_KEY = 'goalpad:scratch';
+
+export function saveScratch(scene) {
+  localStorage.setItem(SCRATCH_KEY, serialize(scene));
+}
+
+export function loadScratch() {
+  const str = localStorage.getItem(SCRATCH_KEY);
+  if (!str) return null;
+  try { return deserialize(str); } catch { return null; }
+}

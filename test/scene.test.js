@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene, pieceById, addPlayer, addCone, addBall, removePiece, duplicateFrame, deleteFrame } from '../js/scene.js';
+import { FIELD_DIMS, fieldViewBox, defaultPositions, createScene, pieceById, addPlayer, addCone, addBall, removePiece, duplicateFrame, deleteFrame, emptyScratchScene } from '../js/scene.js';
 
 test('fieldViewBox full uses preset dims in tenths of a metre', () => {
   assert.deepEqual(fieldViewBox({ preset: '11v11', half: 'full' }), { w: 1050, h: 680 });
@@ -137,4 +137,14 @@ test('addBall is a no-op returning null when a ball already exists', () => {
   const before = scene.pieces.length;
   assert.equal(addBall(scene, 5, 5), null);
   assert.equal(scene.pieces.length, before);
+});
+
+test('emptyScratchScene: 7v7 full, no players, ball, one frame, named Scratchpad', () => {
+  const s = emptyScratchScene();
+  assert.equal(s.field.preset, '7v7');
+  assert.equal(s.field.half, 'full');
+  assert.equal(s.name, 'Scratchpad');
+  assert.equal(s.frames.length, 1);
+  assert.equal(s.pieces.filter((p) => p.kind === 'player').length, 0);
+  assert.ok(s.pieces.some((p) => p.kind === 'ball'));
 });
