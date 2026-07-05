@@ -91,3 +91,11 @@ test('deriveTags picks situational labels from name/group', () => {
   const corner = LIBRARY.find((p) => p.id === 'tac-corner');
   assert.ok(deriveTags(corner).includes('corner'), 'corner');
 });
+
+test('attack/defence tags come from name/group, not descriptions mentioning defenders', () => {
+  const attack = LIBRARY.find((p) => p.id === 'tac-2v1');   // desc "Draw the defender..."
+  assert.ok(deriveTags(attack).includes('attack'), '2v1 attack -> attack');
+  assert.ok(!deriveTags(attack).includes('defence'), '2v1 attack NOT -> defence');
+  const defend = LIBRARY.find((p) => p.id === 'drl-1v1');   // "1v1 defending"
+  assert.ok(deriveTags(defend).includes('defence'), '1v1 defending -> defence');
+});

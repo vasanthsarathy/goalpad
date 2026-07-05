@@ -372,9 +372,14 @@ const TAG_RULES = [
 ];
 
 export function deriveTags(preset) {
-  const hay = `${preset.name} ${preset.group} ${preset.description || ''}`.toLowerCase();
+  const full = `${preset.name} ${preset.group} ${preset.description || ''}`.toLowerCase();
+  const nameGroup = `${preset.name} ${preset.group}`.toLowerCase();
+  const NAME_GROUP_ONLY = new Set(['attack', 'defence']);
   const tags = [];
-  for (const [tag, re] of TAG_RULES) if (re.test(hay) && !tags.includes(tag)) tags.push(tag);
+  for (const [tag, re] of TAG_RULES) {
+    const hay = NAME_GROUP_ONLY.has(tag) ? nameGroup : full;
+    if (re.test(hay) && !tags.includes(tag)) tags.push(tag);
+  }
   if (!tags.length) tags.push(preset.category === 'drills' ? 'drill' : 'tactic');
   return tags;
 }
