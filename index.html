@@ -14,13 +14,16 @@
 
   <div id="editor" hidden>
     <header id="topbar">
-      <button id="btn-back" class="nav" type="button">‹ Library</button>
+      <button id="btn-home" class="brand" type="button">goalpad<span class="dot"></span></button>
       <span id="doc-title" class="doc-title"></span>
       <div class="top-actions">
+        <button id="btn-library" type="button">Library</button>
+        <button id="btn-help" type="button">Help</button>
         <button id="btn-edit" type="button">Edit</button>
+        <button id="btn-setup" type="button">Setup</button>
         <button id="btn-undo" type="button" aria-label="Undo">↶</button>
         <button id="btn-redo" type="button" aria-label="Redo">↷</button>
-        <button id="btn-setup" type="button">Setup</button>
+        <button id="btn-save" type="button">Save</button>
         <button id="btn-done" type="button">Done</button>
       </div>
     </header>
@@ -80,8 +83,34 @@
       <label>Team B players <input id="setup-teamB" type="number" min="0" max="11" value="11"></label>
       <p class="panel-note">Set both counts to 0 for an empty pitch. Changing the setup rebuilds the board.</p>
       <div class="panel-actions">
+        <button id="btn-empty-pitch" type="button">Empty pitch</button>
         <button id="setup-cancel" type="button">Cancel</button>
         <button id="setup-apply" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-help" class="panel" hidden>
+    <div class="panel-card help-card">
+      <h2>How to use goalpad</h2>
+      <div class="help-body">
+        <h3>The board</h3>
+        <p>goalpad opens on your <b>scratchpad</b> — a working board that's always here and saves itself. Tap the <b>goalpad</b> logo any time to come back to it. Use <b>Setup → Empty pitch</b> to start it fresh.</p>
+        <h3>Placing pieces</h3>
+        <p>In Build, the row of chips is: solid disc (Team A), open disc (Team B), red dot (ball), triangle (cone). <b>Tap a chip</b> to arm it, then tap the pitch to drop pieces; or <b>drag a chip</b> onto the pitch. Drag a piece to move it; drag it off the pitch to remove it. The team is the chip you pick.</p>
+        <h3>Selecting &amp; deleting</h3>
+        <p>With no chip armed, <b>tap a piece or mark</b> to select it — a ring and a small <b>Duplicate / Delete</b> chip appear. Tap empty space to deselect.</p>
+        <h3>Drawing</h3>
+        <p><b>Arrow</b> is a pass, <b>Run</b> is a dashed off-ball run, <b>Pen</b> is freehand, <b>Text</b> adds a label. Arm one and drag on the pitch.</p>
+        <h3>Frames &amp; animation</h3>
+        <p>The <b>filmstrip</b> at the bottom holds your frames. Tap a frame to jump to it, tap <b>+</b> to add one (it copies the current positions), long-press a frame to duplicate or delete it. <b>Play</b> animates through them. <b>↶ / ↷</b> undo and redo.</p>
+        <h3>Watch vs Build</h3>
+        <p><b>Build</b> is for editing; <b>Done</b> switches to <b>Watch</b> to preview (just the pitch and playback). <b>Edit</b> switches back.</p>
+        <h3>Library</h3>
+        <p><b>Library</b> holds built-in tactics &amp; drills plus the plays you save. Tap <b>Save</b> to keep the current board in your Library with a name. Open a play to load it; built-in ones make a copy when you edit.</p>
+      </div>
+      <div class="panel-actions">
+        <button id="help-close" type="button">Close</button>
       </div>
     </div>
   </div>

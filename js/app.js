@@ -1,11 +1,12 @@
-// app.js — shell (Home + Watch/Build + autosave) with Build tools, selection, filmstrip, and undo/redo.
-import { createScene, duplicateFrame, deleteFrame, addPlayer, addCone, removePiece, pieceById } from './scene.js';
+// app.js — shell: scratchpad home + Library/Help nav + Watch/Build editor + autosave + undo/redo.
+import { createScene, duplicateFrame, deleteFrame, addPlayer, addCone, removePiece, pieceById, emptyScratchScene } from './scene.js';
 import { renderField } from './field.js';
 import { renderTokens, setTokenPositions } from './tokens.js';
 import { renderMarkup, initTools } from './tools.js';
 import { createStepController, activeMarkupIndex } from './steps.js';
 import { deserialize, exportScene, importSceneFile,
-         newTactic, saveMine, listMine, loadMine, deleteMine, migrateLegacyPlays } from './storage.js';
+         newTactic, saveMine, listMine, loadMine, deleteMine, migrateLegacyPlays,
+         loadScratch, saveScratch } from './storage.js';
 import { LIBRARY } from './library.js';
 import { renderHome } from './home.js';
 import { createHistory } from './history.js';
@@ -23,13 +24,13 @@ const filmstripEl = document.getElementById('filmstrip');
 const btnUndo = document.getElementById('btn-undo');
 const btnRedo = document.getElementById('btn-redo');
 
-let scene = createScene({ preset: '11v11', teamA: 11, teamB: 11, half: 'full' });
+let scene = emptyScratchScene();
 let index = 0;
 let armed = null;      // null | 'chip:A|B|ball|cone' | 'ink:arrow|run|pen|text'
 let selected = null;   // null | {type:'piece',id} | {type:'ink',index}
 let selChip = null;
-let currentDocId = null;
-let currentName = 'Untitled';
+let currentDocId = 'scratch';   // 'scratch' | Mine uuid | null (template preview)
+let currentName = 'Scratchpad';
 
 const clone = (s) => JSON.parse(JSON.stringify(s));
 const history = createHistory(clone);
@@ -57,12 +58,8 @@ function render() {
   refreshScrubRange();
   if (mode() === 'build') {
     renderFilmstrip(filmstripEl, {
-      count: scene.frames.length,
-      current: index,
-      onJump: (i) => settleTo(i),
-      onAdd: addFrame,
-      onDuplicate: dupFrame,
-      onDelete: delFrame,
+      count: scene.frames.length, current: index,
+      onJump: (i) => settleTo(i), onAdd: addFrame, onDuplicate: dupFrame, onDelete: delFrame,
     });
   } else {
     filmstripEl.replaceChildren();
@@ -71,30 +68,25 @@ function render() {
 
 // ---- Persistence + undo history ----
 function persist() {
+  if (currentDocId === 'scratch') { saveScratch(scene); return; }
   if (!currentDocId) return;
   scene.name = currentName;
   saveMine({ id: currentDocId, name: currentName, scene, updatedAt: Date.now() });
 }
 function commit() { history.record(scene); refreshUndoUI(); persist(); }
-function refreshUndoUI() {
-  btnUndo.disabled = !history.canUndo();
-  btnRedo.disabled = !history.canRedo();
-}
+function refreshUndoUI() { btnUndo.disabled = !history.canUndo(); btnRedo.disabled = !history.canRedo(); }
 function undo() {
-  const s = history.undo(scene);
-  if (!s) return;
+  const s = history.undo(scene); if (!s) return;
   scene = s; index = Math.min(index, scene.frames.length - 1);
   dropSelection(); render(); persist(); refreshUndoUI();
 }
 function redo() {
-  const s = history.redo(scene);
-  if (!s) return;
+  const s = history.redo(scene); if (!s) return;
   scene = s; index = Math.min(index, scene.frames.length - 1);
   dropSelection(); render(); persist(); refreshUndoUI();
 }
 btnUndo.addEventListener('click', undo);
 btnRedo.addEventListener('click', redo);
-// two-finger tap → undo (Build only; best-effort)
 let twoFinger = false, tfStart = 0;
 board.addEventListener('touchstart', (e) => { twoFinger = e.touches.length === 2; tfStart = e.timeStamp; });
 board.addEventListener('touchend', (e) => {
@@ -144,8 +136,7 @@ function openSelChipForInk(i) {
 }
 function openSelChip(anchorEl, items) {
   closeSelChip();
-  selChip = document.createElement('div');
-  selChip.className = 'sel-chip';
+  selChip = document.createElement('div'); selChip.className = 'sel-chip';
   for (const [label, fn] of items) {
     const b = document.createElement('button'); b.className = 'sel-item'; b.type = 'button'; b.textContent = label;
     b.addEventListener('click', fn);
@@ -189,7 +180,6 @@ function settleTo(i) { dropSelection(); index = Math.max(0, Math.min(scene.frame
 
 const steps = createStepController({ getScene: () => scene, applyPositions, onDone: (i) => settleTo(i) });
 
-// ---- Frame ops (filmstrip) ----
 function addFrame() { dropSelection(); index = duplicateFrame(scene, index); render(); commit(); }
 function dupFrame(i) { dropSelection(); index = duplicateFrame(scene, i); render(); commit(); }
 function delFrame(i) { dropSelection(); if (deleteFrame(scene, i)) { if (i < index) index -= 1; index = Math.min(index, scene.frames.length - 1); render(); commit(); } }
@@ -201,7 +191,7 @@ scrub.addEventListener('change', () => settleTo(Number(scrub.value)));
 document.getElementById('btn-step-prev').addEventListener('click', () => { settleTo(index - 1); });
 document.getElementById('btn-step-next').addEventListener('click', () => { settleTo(index + 1); });
 
-// ---- Setup panel (New sheet + in-Build pitch change) ----
+// ---- Setup panel (New Library play + in-Build pitch change + Empty pitch) ----
 const panelSetup = document.getElementById('panel-setup');
 const elPreset = document.getElementById('setup-preset');
 const elHalf = document.getElementById('setup-half');
@@ -226,7 +216,7 @@ elPreset.addEventListener('change', () => {
 });
 document.getElementById('setup-cancel').addEventListener('click', () => {
   panelSetup.hidden = true;
-  if (setupMode === 'new') showHome();
+  if (setupMode === 'new') showLibrary();
 });
 document.getElementById('setup-apply').addEventListener('click', () => {
   scene = createScene({
@@ -246,9 +236,22 @@ document.getElementById('setup-apply').addEventListener('click', () => {
     dropSelection(); render(); commit();
   }
 });
+document.getElementById('btn-empty-pitch').addEventListener('click', () => {
+  if (!window.confirm('Empty the pitch? This clears your scratchpad.')) return;
+  scene = emptyScratchScene();
+  currentDocId = 'scratch'; currentName = 'Scratchpad'; index = 0;
+  saveScratch(scene);
+  panelSetup.hidden = true;
+  enterEditor('build');
+});
 
 // ---- Navigation / surfaces ----
-function showHome() {
+function openScratch() {
+  scene = loadScratch() || emptyScratchScene();
+  currentDocId = 'scratch'; currentName = 'Scratchpad'; index = 0;
+  enterEditor('build');
+}
+function showLibrary() {
   dropSelection();
   editorEl.hidden = true;
   homeEl.hidden = false;
@@ -262,8 +265,10 @@ function showHome() {
     onDuplicate: duplicateTactic,
     onExport: exportTactic,
     onDelete: deleteTactic,
+    onClose: closeLibrary,
   });
 }
+function closeLibrary() { homeEl.hidden = true; editorEl.hidden = false; }
 
 function enterEditor(m) {
   homeEl.hidden = true;
@@ -271,7 +276,6 @@ function enterEditor(m) {
   history.reset(scene); refreshUndoUI();
   setMode(m);
 }
-
 function setMode(m) {
   editorEl.dataset.mode = m;
   docTitle.textContent = currentName + (m === 'build' ? ' ✎' : '');
@@ -297,7 +301,7 @@ function openCard(kind, item) {
     currentDocId = null; currentName = item.name;
   } else {
     const t = loadMine(item.id);
-    if (!t) { showHome(); return; }
+    if (!t) { showLibrary(); return; }
     scene = t.scene; currentDocId = t.id; currentName = t.name;
   }
   index = 0;
@@ -318,11 +322,22 @@ function renameCurrent() {
   docTitle.textContent = currentName + ' ✎';
   persist();
 }
+function saveToLibrary() {
+  const seed = currentName === 'Scratchpad' ? '' : currentName;
+  const name = (window.prompt('Save to Library as…', seed) || '').trim();
+  if (!name) return;
+  saveMine(newTactic(name, clone(scene)));
+  window.alert(`Saved “${name}” to your Library.`);
+}
 
+document.getElementById('btn-home').addEventListener('click', openScratch);
+document.getElementById('btn-library').addEventListener('click', showLibrary);
+document.getElementById('btn-help').addEventListener('click', () => { document.getElementById('panel-help').hidden = false; });
+document.getElementById('help-close').addEventListener('click', () => { document.getElementById('panel-help').hidden = true; });
 document.getElementById('btn-edit').addEventListener('click', onEdit);
 document.getElementById('btn-done').addEventListener('click', () => setMode('watch'));
-document.getElementById('btn-back').addEventListener('click', showHome);
 document.getElementById('btn-setup').addEventListener('click', () => openSetup('edit'));
+document.getElementById('btn-save').addEventListener('click', saveToLibrary);
 docTitle.addEventListener('click', () => { if (mode() === 'build') renameCurrent(); });
 
 // ---- Card-menu actions ----
@@ -332,12 +347,12 @@ function renameTactic(item) {
   const t = loadMine(item.id); if (!t) return;
   t.name = name; t.scene.name = name; t.updatedAt = Date.now();
   saveMine(t);
-  showHome();
+  showLibrary();
 }
 function duplicateTactic(item) {
   const s = sceneOf(item); if (!s) return;
   saveMine(newTactic((item.name || 'Untitled') + ' (copy)', s));
-  showHome();
+  showLibrary();
 }
 function exportTactic(item) {
   const s = sceneOf(item); if (!s) return;
@@ -346,7 +361,7 @@ function exportTactic(item) {
 function deleteTactic(item) {
   if (!window.confirm(`Delete "${item.name}"?`)) return;
   deleteMine(item.id);
-  showHome();
+  showLibrary();
 }
 
 importInput.addEventListener('change', (e) => {
@@ -363,5 +378,5 @@ importInput.addEventListener('change', (e) => {
 
 // ---- Launch ----
 migrateLegacyPlays();
-showHome();
+openScratch();
 console.log('[goalpad] loaded');
