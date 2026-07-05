@@ -135,3 +135,19 @@ button:active { opacity: 0.6; }
 .lib-icon { width: 16px; flex: 0 0 auto; color: #0a0a0a; font-size: 14px; }
 .lib-nm { font-size: 14px; color: #0a0a0a; }
 .lib-tags { font-size: 11px; color: #949494; margin-left: auto; text-align: right; }
+
+/* ---- responsive top bar (narrow) + landscape fit ---- */
+#btn-more { display: none; }
+.doc-title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 560px) {
+  #editor[data-mode="build"] #btn-help,
+  #editor[data-mode="build"] #btn-setup,
+  #editor[data-mode="build"] #btn-save { display: none; }
+  #editor[data-mode="build"] #btn-more { display: inline-block; }
+  #editor #topbar .top-actions { gap: 12px; }
+}
+
+@media (max-height: 480px) {
+  #topbar, #toolbar, #stepsbar, #filmbar { padding-top: 5px; padding-bottom: 5px; }
+}
