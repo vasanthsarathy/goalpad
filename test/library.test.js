@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LIBRARY } from '../js/library.js';
+import { LIBRARY, deriveTags } from '../js/library.js';
 import { serialize, deserialize } from '../js/storage.js';
 import { fieldViewBox } from '../js/scene.js';
 
@@ -74,4 +74,28 @@ test('every position is within the pitch bounds', () => {
       }
     }
   }
+});
+
+test('deriveTags returns a non-empty string array for every preset', () => {
+  for (const p of LIBRARY) {
+    const t = deriveTags(p);
+    assert.ok(Array.isArray(t) && t.length > 0, `${p.id} has tags`);
+    assert.ok(t.every((x) => typeof x === 'string'), `${p.id} tag types`);
+  }
+});
+
+test('deriveTags picks situational labels from name/group', () => {
+  const twoVone = LIBRARY.find((p) => p.id === 'tac-2v1');
+  assert.ok(deriveTags(twoVone).includes('2v1'), '2v1');
+  assert.ok(deriveTags(twoVone).includes('attack'), 'attack');
+  const corner = LIBRARY.find((p) => p.id === 'tac-corner');
+  assert.ok(deriveTags(corner).includes('corner'), 'corner');
+});
+
+test('attack/defence tags come from name/group, not descriptions mentioning defenders', () => {
+  const attack = LIBRARY.find((p) => p.id === 'tac-2v1');   // desc "Draw the defender..."
+  assert.ok(deriveTags(attack).includes('attack'), '2v1 attack -> attack');
+  assert.ok(!deriveTags(attack).includes('defence'), '2v1 attack NOT -> defence');
+  const defend = LIBRARY.find((p) => p.id === 'drl-1v1');   // "1v1 defending"
+  assert.ok(deriveTags(defend).includes('defence'), '1v1 defending -> defence');
 });

@@ -67,9 +67,9 @@ function freshId() {
 }
 
 // pure: build a tactic record from a name + scene
-export function newTactic(name, scene) {
+export function newTactic(name, scene, tags = []) {
   const n = (name || 'Untitled').trim() || 'Untitled';
-  return { id: freshId(), name: n, scene: { ...scene, name: n }, updatedAt: Date.now() };
+  return { id: freshId(), name: n, scene: { ...scene, name: n }, updatedAt: Date.now(), tags: Array.isArray(tags) ? tags : [] };
 }
 
 // pure: given legacy [{name, str}], return [{name, scene}] for entries that deserialize
@@ -92,7 +92,7 @@ export function listMine() {
     if (!key || !key.startsWith(MINE_PREFIX)) continue;
     try {
       const rec = JSON.parse(localStorage.getItem(key));
-      if (rec && rec.id && rec.scene) out.push({ id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0 });
+      if (rec && rec.id && rec.scene) out.push({ id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, tags: rec.tags || [] });
     } catch { /* skip corrupt */ }
   }
   return out.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -103,7 +103,7 @@ export function loadMine(id) {
   if (!str) return null;
   try {
     const rec = JSON.parse(str);
-    return { id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, scene: deserialize(JSON.stringify(rec.scene)) };
+    return { id: rec.id, name: rec.name || 'Untitled', updatedAt: rec.updatedAt || 0, tags: rec.tags || [], scene: deserialize(JSON.stringify(rec.scene)) };
   } catch {
     return null;
   }
@@ -136,4 +136,21 @@ export function loadScratch() {
   const str = localStorage.getItem(SCRATCH_KEY);
   if (!str) return null;
   try { return deserialize(str); } catch { return null; }
+}
+
+// ---- Library search / tags ----
+export function normalizeTags(str) {
+  return [...new Set((str || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean))];
+}
+
+export function filterLibrary(items, opts = {}) {
+  const q = (opts.query || '').trim().toLowerCase();
+  const tags = opts.tags || [];
+  return items.filter((it) => {
+    const itags = it.tags || [];
+    if (tags.length && !tags.every((t) => itags.includes(t))) return false;
+    if (!q) return true;
+    const hay = `${it.name || ''} ${it.description || ''} ${itags.join(' ')}`.toLowerCase();
+    return hay.includes(q);
+  });
 }

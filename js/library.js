@@ -355,3 +355,31 @@ export const LIBRARY = [
   // Season presets appended below (see library-season.js).
   ...SEASON,
 ];
+
+// Derive situational tags for a built-in preset from its name/group/description.
+const TAG_RULES = [
+  ['2v1', /\b2\s*-?\s*v\s*-?\s*1\b/], ['3v2', /\b3\s*-?\s*v\s*-?\s*2\b/], ['3v3', /\b3\s*-?\s*v\s*-?\s*3\b/],
+  ['4v4', /\b4\s*-?\s*v\s*-?\s*4\b/], ['5v2', /\b5\s*-?\s*v\s*-?\s*2\b/], ['1v1', /\b1\s*-?\s*v\s*-?\s*1\b/],
+  ['small-sided', /small.?sided/],
+  ['corner', /corner/], ['throw-in', /throw/], ['free-kick', /free.?kick/], ['set-piece', /set.?piece/],
+  ['attack', /attack/], ['defence', /defen[cs]e|defend/],
+  ['possession', /possession|keep.?ball/], ['rondo', /rondo/],
+  ['finishing', /finish|shoot|shot|scor/], ['warm-up', /warm.?up/],
+  ['pressing', /press/], ['transition', /transition/],
+  ['overlap', /overlap/], ['give-and-go', /give.?and.?go|one.?two/], ['switch', /switch/],
+  ['third-man', /third.?man/], ['passing', /passing|\bpass\b/], ['dribbling', /dribbl/],
+  ['crossing', /cross/], ['wide', /\bwide\b|wing|flank/],
+];
+
+export function deriveTags(preset) {
+  const full = `${preset.name} ${preset.group} ${preset.description || ''}`.toLowerCase();
+  const nameGroup = `${preset.name} ${preset.group}`.toLowerCase();
+  const NAME_GROUP_ONLY = new Set(['attack', 'defence']);
+  const tags = [];
+  for (const [tag, re] of TAG_RULES) {
+    const hay = NAME_GROUP_ONLY.has(tag) ? nameGroup : full;
+    if (re.test(hay) && !tags.includes(tag)) tags.push(tag);
+  }
+  if (!tags.length) tags.push(preset.category === 'drills' ? 'drill' : 'tactic');
+  return tags;
+}
