@@ -353,9 +353,9 @@ function renameTactic(item) {
   saveMine(t);
   showLibrary();
 }
-function duplicateTactic(item) {
+function duplicateTactic(item, tags) {
   const s = sceneOf(item); if (!s) return;
-  saveMine(newTactic((item.name || 'Untitled') + ' (copy)', s, item.tags || []));
+  saveMine(newTactic((item.name || 'Untitled') + ' (copy)', s, tags || item.tags || []));
   showLibrary();
 }
 function editTags(item) {

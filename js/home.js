@@ -65,8 +65,8 @@ export function renderLibrary(root, cbs) {
     const b = el('button', 'lib-row'); b.type = 'button';
     b.append(el('span', 'lib-icon', iconOf(item)), el('span', 'lib-nm', item.name), el('span', 'lib-tags', item.tags.join(' · ')));
     const menuItems = item.kind === 'mine'
-      ? [['Rename', () => onRename(item.ref)], ['Tags', () => onEditTags(item.ref)], ['Duplicate', () => onDuplicate(item.ref)], ['Export', () => onExport(item.ref)], ['Delete', () => onDelete(item.ref)]]
-      : [['Duplicate', () => onDuplicate(item.ref)], ['Export', () => onExport(item.ref)]];
+      ? [['Rename', () => onRename(item.ref)], ['Tags', () => onEditTags(item.ref)], ['Duplicate', () => onDuplicate(item.ref, item.tags)], ['Export', () => onExport(item.ref)], ['Delete', () => onDelete(item.ref)]]
+      : [['Duplicate', () => onDuplicate(item.ref, item.tags)], ['Export', () => onExport(item.ref)]];
     wireRow(b, () => onOpen(item.kind, item.ref), (anchor) => openMenu(anchor, menuItems));
     return b;
   }
