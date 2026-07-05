@@ -4,9 +4,11 @@
 @font-face { font-family: 'Jost'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/jost-500.woff2') format('woff2'); }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
 body {
-  display: flex; flex-direction: column; height: 100vh;
+  display: flex; flex-direction: column;
+  height: 100vh;   /* fallback for browsers without dvh */
+  height: 100dvh;  /* iOS: track the dynamic viewport so rotation + toolbars don't clip the layout */
   font-family: 'Jost', 'Space Grotesk', Futura, system-ui, sans-serif; font-weight: 400;
   overflow: hidden; touch-action: none;
   -webkit-user-select: none; user-select: none;
