@@ -9,7 +9,7 @@ function el(tag, cls, text) {
 }
 
 export function renderHome(root, cbs) {
-  const { templates, mine, onOpen, onNew, onImport, onRename, onDuplicate, onExport, onDelete } = cbs;
+  const { templates, mine, onOpen, onNew, onImport, onRename, onDuplicate, onExport, onDelete, onClose } = cbs;
   closeMenu();
   root.replaceChildren();
 
@@ -22,7 +22,9 @@ export function renderHome(root, cbs) {
   newBtn.addEventListener('click', () => onNew());
   const importBtn = el('button', 'home-action', 'Import'); importBtn.type = 'button';
   importBtn.addEventListener('click', () => onImport());
-  actions.append(newBtn, importBtn);
+  const closeBtn = el('button', 'home-action', 'Close'); closeBtn.type = 'button';
+  closeBtn.addEventListener('click', () => onClose());
+  actions.append(newBtn, importBtn, closeBtn);
   head.append(brand, actions);
   root.append(head);
 

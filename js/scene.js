@@ -125,3 +125,7 @@ export function deleteFrame(scene, index) {
   scene.frames.splice(index, 1);
   return true;
 }
+
+export function emptyScratchScene() {
+  return createScene({ preset: '7v7', teamA: 0, teamB: 0, half: 'full', name: 'Scratchpad' });
+}
